@@ -12,28 +12,15 @@
 </head>
 <body>
   <div class="app-shell">
-    <aside class="sidebar">
-      <div class="brand"><div class="brand-mark">A</div><div><div class="brand-name">Aurelia</div><div class="brand-sub">GOLD INTELLIGENCE</div></div></div>
-      <nav class="nav-list" aria-label="主导航">
-        <button class="nav-item active" data-target="top"><span class="nav-icon">◈</span>市场总览</button>
-        <button class="nav-item" data-target="forecast"><span class="nav-icon">⌁</span>趋势预测</button>
-        <button class="nav-item" data-target="pulse"><span class="nav-icon">◌</span>影响因子</button>
-        <button class="nav-item" data-target="plan"><span class="nav-icon">▣</span>购买计划</button>
-        <button class="nav-item" data-target="forecast"><span class="nav-icon">♧</span>策略回测</button>
-      </nav>
-      <div class="sidebar-bottom">
-        <div class="mini-card"><div class="mini-label">AURELIA SIGNAL</div><div class="mini-value">82<span>/100</span></div><div class="mini-note"><i></i>信号质量良好</div></div>
-        <button class="settings"><span>⚙</span> 偏好设置</button>
-        <div class="profile"><div class="avatar">林</div><div><b>林先生</b><small>长期配置者</small></div><span class="dots">···</span></div>
-      </div>
-    </aside>
-    <main class="main-content">
+    <a class="skip-link" href="#page-title">跳到主要内容</a>
+    <header class="site-header"><a class="brand" href="#/overview" aria-label="Aurelia 首页"><span class="brand-mark">A</span><span><span class="brand-name">Aurelia</span><span class="brand-sub">GOLD INTELLIGENCE</span></span></a><nav class="primary-nav" aria-label="主导航"><a href="#/overview" aria-current="page">总览</a><a href="#/analysis">市场分析</a><a href="#/plan">购买计划</a></nav><span class="demo-badge">演示工作台</span></header>
+    <main class="main-content" id="main"><header class="topbar"><div><div class="eyebrow" id="today-label"></div><h1 id="page-title" tabindex="-1">把握方向，从容决策</h1><p id="page-description" class="page-description">先看行情与核心判断，再决定是否深入分析或制定计划。</p></div><span class="data-status">示例快照 · 非实时行情</span></header><section data-page="overview" aria-labelledby="page-title">
       <header class="topbar" id="top"><div><div class="eyebrow" id="today-label">SATURDAY, 12 SEPTEMBER 2026</div><h1>早上好，林先生 <span>✦</span></h1></div><div class="top-actions"><div class="last-sync"><i></i>演示数据 · 更新于 09:41</div><button class="icon-btn" aria-label="搜索">⌕</button><button class="icon-btn notify" aria-label="通知">♢<em></em></button></div></header>
       <section class="hero-grid">
         <article class="signal-card card"><div class="card-head"><div><div class="eyebrow">AURELIA MARKET SIGNAL</div><h2>谨慎积累阶段</h2></div><span class="status-pill"><i></i> 偏强</span></div><p class="signal-copy">宏观环境仍为黄金提供支撑，但短线涨幅已较为充分。建议保持节奏，等待更好的配置窗口。</p><div class="signal-metrics"><div><span>趋势倾向</span><b>看涨</b></div><div><span>短线风险</span><b class="yellow">中等</b></div><div><span>信号置信度</span><b id="confidence-value">82%</b></div></div><div class="signal-footer"><span>综合 7 项核心因子</span><button class="text-btn" id="recalculate">重新计算 <span>↻</span></button></div></article>
         <article class="price-card card"><div class="card-head"><div><div class="eyebrow">SPOT GOLD · XAU/USD</div><h2 class="price">$2,684.70</h2></div><span class="change up">+0.84%</span></div><div class="price-meta"><span>≈ ¥613 / 克 <small>按 7.10 汇率</small></span><span>今日最高 <b>$2,691.20</b></span></div><div class="sparkline"><svg viewBox="0 0 600 150" preserveAspectRatio="none" aria-label="金价走势"><defs><linearGradient id="fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#d3a84c" stop-opacity=".25"/><stop offset="1" stop-color="#d3a84c" stop-opacity="0"/></linearGradient></defs><path class="area" d="M0,122 C24,112 34,119 53,104 S85,112 103,92 S129,98 148,76 S170,82 188,88 S214,68 238,78 S264,54 282,61 S303,79 326,68 S348,70 365,50 S387,57 406,42 S425,55 448,39 S473,51 493,25 S520,32 538,18 S562,32 600,8 L600,150 L0,150Z"/><path class="line" d="M0,122 C24,112 34,119 53,104 S85,112 103,92 S129,98 148,76 S170,82 188,88 S214,68 238,78 S264,54 282,61 S303,79 326,68 S348,70 365,50 S387,57 406,42 S425,55 448,39 S473,51 493,25 S520,32 538,18 S562,32 600,8"/></svg><div class="chart-labels"><span>09:00</span><span>12:00</span><span>15:00</span><span>18:00</span><span>21:00</span></div></div></article>
       </section>
-      <section class="section-heading"><div><div class="eyebrow">MARKET PULSE</div><h3>市场脉搏</h3></div><button class="range-select">今日 <span>⌄</span></button></section>
+      <div class="overview-next"><a class="destination-card" href="#/analysis"><span class="eyebrow">01 / UNDERSTAND</span><h2>判断背后，有哪些依据？</h2><p>将价格展望与影响因子放在一起，理解判断的来源与局限。</p><span class="destination-action">进入市场分析 ↗</span></a><a class="destination-card" href="#/plan"><span class="eyebrow">02 / PLAN</span><h2>把预算，安排得更从容。</h2><p>单独编辑分批比例与投入节奏，不被行情图表打断。</p><span class="destination-action">制定购买计划 ↗</span></a></div></section><section data-page="analysis" aria-labelledby="page-title" hidden><div class="context-strip"><span>当前示例金价 <b>$2,684.70 / 金衡盎司</b></span><a href="#/plan">去制定计划 →</a></div><section class="section-heading"><div><div class="eyebrow">MARKET PULSE</div><h3>影响因子</h3></div><span class="plan-note">同一组演示快照</span></section>
       <section class="pulse-grid" id="pulse">
         <article class="metric-card card"><div class="metric-top"><span>美元指数 DXY</span><span class="change down">−0.18%</span></div><b>101.42</b><div class="tiny-chart red"><svg viewBox="0 0 180 40" preserveAspectRatio="none"><path d="M0,13 C20,8 27,21 45,16 S70,30 88,21 S111,28 130,18 S154,24 180,8"/></svg></div><small>美元走弱，利好黄金</small></article>
         <article class="metric-card card"><div class="metric-top"><span>美国实际利率</span><span class="change down">−3.2 bps</span></div><b>1.68%</b><div class="tiny-chart red"><svg viewBox="0 0 180 40" preserveAspectRatio="none"><path d="M0,10 C24,18 32,10 50,22 S70,17 89,30 S116,20 134,26 S160,17 180,34"/></svg></div><small>实际利率回落，支撑金价</small></article>
@@ -44,6 +31,7 @@
         <article class="forecast-card card" id="forecast"><div class="section-heading compact"><div><div class="eyebrow">PRICE OUTLOOK</div><h3>未来价格展望</h3></div><button class="range-select">30 天 <span>⌄</span></button></div><div class="forecast-main"><div class="forecast-number" id="forecast-value">$2,730 <span>预期中位</span></div><div class="forecast-badge" id="forecast-change">+1.69%<small>较当前价格</small></div></div><div class="forecast-chart"><svg viewBox="0 0 680 190" preserveAspectRatio="none"><path class="gridline" d="M0,36H680 M0,90H680 M0,144H680"/><path class="confidence" d="M390,87 C445,72 500,98 553,58 S625,72 680,34 L680,122 C620,136 588,113 540,130 S455,118 390,120Z"/><path class="actual" d="M0,138 C31,129 53,144 79,122 S121,137 150,114 S188,118 219,101 S254,115 285,90 S320,111 355,90 S378,97 390,87"/><path class="projection" d="M390,87 C445,72 500,98 553,58 S625,72 680,34"/></svg><div class="axis"><span>−30 日</span><span>−15 日</span><span>今日</span><span>+15 日</span><span>+30 日</span></div></div><div class="legend"><span><i class="dot gold"></i>实际价格</span><span><i class="dot dashed"></i>预测中位</span><span><i class="dot band"></i>置信区间</span></div></article>
         <article class="allocation-card card"><div class="section-heading compact"><div><div class="eyebrow">SIGNAL BREAKDOWN</div><h3>信号构成</h3></div><button class="text-btn">详情 →</button></div><div class="donut-wrap"><div class="donut"><div><b>82</b><span>综合评分</span></div></div><div class="breakdown"><div><span><i class="dot gold"></i>宏观环境</span><b>+24</b></div><div><span><i class="dot brown"></i>技术趋势</span><b>+21</b></div><div><span><i class="dot sand"></i>资金流向</span><b>+19</b></div><div><span><i class="dot pale"></i>避险情绪</span><b>+18</b></div></div></div><div class="recommendation" id="recommendation"><span class="rec-icon">✦</span><div><b>当前策略建议</b><p>适合分批配置，不宜追高</p></div><span class="arrow">→</span></div></article>
       </section>
+      <aside class="validation-note"><h2>预测验证状态</h2><p>以上价格、评分及图形均为界面示例，未经过模型校准，不能当作上涨概率或投资依据。尚未接入真实历史数据，暂无回测结果。</p></aside></section><section data-page="plan" aria-labelledby="page-title" hidden><div class="context-strip"><span>独立规划预算 · 不会提交交易</span><a href="#/analysis">回看市场分析 →</a></div>
       <section class="plan-card card" id="plan">
         <div class="section-heading compact"><div><div class="eyebrow">ACCUMULATION PLAN</div><h3>制定你的黄金计划</h3></div><span class="plan-note">仅供模拟参考</span></div>
         <div class="plan-form">
@@ -54,9 +42,10 @@
         </div>
         <div class="plan-result" id="plan-result"><div class="result-intro"><span class="rec-icon">✦</span><div><b>建议分三批配置</b><p>根据当前“谨慎积累”信号，保留部分现金应对回调。</p></div></div><div class="steps"><div><span>第一批 · 现在</span><b id="step-one">¥30,000</b><small>30%</small></div><div><span>第二批 · 回调 3–5%</span><b id="step-two">¥35,000</b><small>35%</small></div><div><span>第三批 · 趋势确认</span><b id="step-three">¥35,000</b><small>35%</small></div></div></div>
       </section>
-      <footer class="footer"><span>© 2026 Aurelia Intelligence</span><span>演示数据 · 数据仅供参考，不构成投资建议 · 最后校准 09:41 CST</span></footer>
+      <aside class="validation-note"><h2>计划边界</h2><p>这里只分配你输入的预算，不代表适合你的投资比例。未计入渠道价差与手续费，也不会下单。计划保存在当前浏览器，不会上传。</p></aside></section><footer class="footer"><span>© 2026 Aurelia Intelligence</span><span>演示数据 · 非投资建议 · 未连接交易账户</span></footer>
     </main>
   </div>
   <script src="app.js"></script>
 </body>
 </html>
+

@@ -67,3 +67,23 @@ document.querySelector('#recalculate')?.addEventListener('click', () => {
   if (change) change.innerHTML = `+${((score - 80) / 10 + 1.69).toFixed(2)}%<small>较当前价格</small>`;
   toast(`分析完成 · 综合评分 ${score}/100`);
 });
+
+const pageMeta = {
+  overview: ['把握方向，从容决策', '先看行情与核心判断，再决定是否深入分析或制定计划。'],
+  analysis: ['理解市场，校准判断', '把价格展望与影响因子放在一起，明确依据与不确定性。'],
+  plan: ['把预算，安排得更从容', '根据你的预算和风险偏好，生成一个可调整的分批方案。'],
+};
+const routePage = () => {
+  const key = location.hash.replace('#/', '') || 'overview';
+  const page = pageMeta[key] ? key : 'overview';
+  document.querySelectorAll('[data-page]').forEach((section) => { section.hidden = section.dataset.page !== page; });
+  document.querySelectorAll('.primary-nav a').forEach((link) => {
+    link.toggleAttribute('aria-current', link.getAttribute('href') === `#/${page}`);
+  });
+  const [title, description] = pageMeta[page];
+  document.querySelector('#page-title').textContent = title;
+  document.querySelector('#page-description').textContent = description;
+  document.querySelector('#page-title').focus({ preventScroll: true });
+};
+window.addEventListener('hashchange', routePage);
+routePage();
