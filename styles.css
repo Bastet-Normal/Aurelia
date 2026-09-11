@@ -34,6 +34,8 @@ a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible
 .primary-nav a[aria-current="page"]::after { content: ""; position: absolute; bottom: 0; width: 22px; height: 2px; background: var(--gold); }
 .demo-badge, .data-status { color: #9b8a69; font-size: 10px; }
 .page-description { margin: 8px 0 0; color: var(--muted); font-size: 11px; }
+#page-title:focus { outline: none; }
+.primary-nav a { white-space: nowrap; }
 .overview-next { display: grid; grid-template-columns: repeat(2,1fr); gap: 16px; margin-top: 32px; }
 .destination-card { padding: 22px 24px; border: 1px solid var(--line); border-radius: 11px; color: inherit; background: var(--card); box-shadow: var(--shadow); text-decoration: none; transition: transform .2s ease, border-color .2s ease; }
 .destination-card:hover { border-color: #d6bd88; transform: translateY(-2px); }
