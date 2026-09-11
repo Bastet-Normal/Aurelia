@@ -16,8 +16,9 @@ const toast = (message) => {
   window.setTimeout(() => node.remove(), 2200);
 };
 
-const savedBudget = window.localStorage.getItem('aurelia-budget');
-const savedRisk = window.localStorage.getItem('aurelia-risk');
+const readSaved = (key) => { try { return window.localStorage.getItem(key); } catch { return null; } };
+const savedBudget = readSaved('aurelia-budget');
+const savedRisk = readSaved('aurelia-risk');
 if (savedBudget && document.querySelector('#budget')) document.querySelector('#budget').value = savedBudget;
 if (savedRisk && document.querySelector('#risk')) document.querySelector('#risk').value = savedRisk;
 
@@ -75,15 +76,18 @@ const pageMeta = {
 };
 const routePage = () => {
   const key = location.hash.replace('#/', '') || 'overview';
-  const page = pageMeta[key] ? key : 'overview';
+  const page = Object.hasOwn(pageMeta, key) ? key : 'overview';
   document.querySelectorAll('[data-page]').forEach((section) => { section.hidden = section.dataset.page !== page; });
   document.querySelectorAll('.primary-nav a').forEach((link) => {
-    link.toggleAttribute('aria-current', link.getAttribute('href') === `#/${page}`);
+    if (link.getAttribute('href') === `#/${page}`) link.setAttribute('aria-current', 'page');
+    else link.removeAttribute('aria-current');
   });
   const [title, description] = pageMeta[page];
   document.querySelector('#page-title').textContent = title;
   document.querySelector('#page-description').textContent = description;
   document.querySelector('#page-title').focus({ preventScroll: true });
+  document.title = `${page === 'overview' ? '总览' : page === 'analysis' ? '市场分析' : '购买计划'} · Aurelia`;
+  window.scrollTo({ top: 0, behavior: 'instant' });
 };
 window.addEventListener('hashchange', routePage);
 routePage();

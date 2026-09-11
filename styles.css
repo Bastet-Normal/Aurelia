@@ -19,7 +19,10 @@
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--paper); color: var(--ink); font: 13px/1.5 Manrope, "PingFang SC", "Microsoft YaHei", sans-serif; }
 button { font: inherit; }
-.app-shell { display: flex; min-height: 100vh; }
+.app-shell { display: flex; flex-direction: column; min-height: 100vh; }
+[hidden] { display: none !important; }
+a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outline-offset: 4px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 .skip-link { position: absolute; left: 12px; top: -40px; z-index: 20; padding: 8px 12px; color: #fff; background: var(--green); }
 .skip-link:focus { top: 12px; }
 .site-header { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; justify-content: space-between; height: 72px; padding: 0 max(24px, calc((100vw - 1220px) / 2)); border-bottom: 1px solid var(--line); background: rgba(245,243,238,.94); backdrop-filter: blur(14px); }
@@ -174,6 +177,8 @@ button { font: inherit; }
 .steps b { display: inline-block; margin: 3px 5px 0 0; font-size: 15px; }
 .steps small { display: inline-block; color: var(--gold); }
 .footer { display: flex; justify-content: space-between; margin-top: 26px; padding: 0 2px; color: #aaa89f; font-size: 9px; }
+@media (max-width: 960px) { .plan-result { flex-direction: column; align-items: stretch; gap: 18px; } }
+@media (max-width: 420px) { .overview-next { grid-template-columns: 1fr !important; } .site-header .brand-sub { display: none; } .context-strip { align-items: flex-start; gap: 12px; flex-direction: column; } .plan-form { grid-template-columns: 1fr !important; } .plan-button { grid-column: auto !important; } }
 .toast { position: fixed; right: 28px; bottom: 24px; z-index: 10; padding: 10px 14px; border: 1px solid #d8ccb3; border-radius: 7px; color: #5e553f; background: #fffaf0; box-shadow: 0 8px 25px rgba(40,32,18,.12); font-size: 11px; animation: toast-in .2s ease-out; }
 @keyframes toast-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
