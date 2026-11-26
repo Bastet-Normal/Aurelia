@@ -1,13 +1,15 @@
 'use strict';
 
 function mountAureliaPlanner() {
-  const { risks, horizons, restorePlan, defaultPlan, parseBudget, buildPlan } = aureliaModel;
-  const { storageKey, previousStorageKey, today, validate, estimate, validatePurchase, purchaseProgress, normalizeRecord,
-    encodeBackup, decodeBackup, mergeRecords, planCsv, planCalendar, priceComparison } = aureliaPlans;
+  const { risks, horizons, restorePlan, defaultPlan, parseBudget, parseYuan } = aureliaModel;
+  const { storageKey, previousStorageKeys, maxBatches, maxTrades, today, validate, estimate, presetSchedule,
+    validatePurchase, purchaseProgress, normalizeRecord, encodeBackup, decodeBackup, mergeRecords, planCsv, planCalendar } = aureliaPlans;
   const $ = (selector) => document.querySelector(selector);
   const integer = new Intl.NumberFormat('en-US');
   const costs = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const grams = new Intl.NumberFormat('en-US', { maximumFractionDigits: 4 });
+  const ratios = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
+  const quoteDate = new Intl.DateTimeFormat('zh-CN', { dateStyle: 'short', timeStyle: 'short' });
   const yuan = (value) => '¥' + integer.format(value);
   const preciseYuan = (value) => (value < 0 ? '−' : '') + '¥' + costs.format(Math.abs(value));
   const setText = (selector, value) => { if ($(selector).textContent !== value) $(selector).textContent = value; };
@@ -18,8 +20,8 @@ function mountAureliaPlanner() {
   const dialog = $('#purchase-dialog');
   const purchaseForm = $('#purchase-form');
   const purchaseFields = purchaseForm.elements;
-  const batchNames = ['首批', '第二批', '第三批'];
-  const previewIds = ['#preview-first', '#preview-second', '#preview-third'];
+  const batchName = (index) => '第 ' + (index + 1) + ' 批';
+  const scheduleLines = $('#schedule-lines');
   let activeId;
   let draftId;
   let reference;
@@ -29,6 +31,7 @@ function mountAureliaPlanner() {
   let cleanSettings;
   let notice = '';
   let editingPurchase;
+  let quoteContext;
 
   const makeId = () => 'p-' + (crypto.randomUUID?.() ?? Array.from(crypto.getRandomValues(new Uint32Array(4)), (number) => number.toString(16)).join('-'));
 
@@ -68,8 +71,9 @@ function mountAureliaPlanner() {
     try {
       const existing = readRecords();
       if (existing) return existing;
-      const previous = window.localStorage.getItem(previousStorageKey);
-      if (previous !== null) {
+      for (const key of previousStorageKeys) {
+        const previous = window.localStorage.getItem(key);
+        if (previous === null) continue;
         const migrated = mergeRecords([], decodeBackup(previous), makeId);
         if (!saveRecords(migrated)) notice = '已读取旧计划，请下载备份，浏览器未能保存迁移结果。';
         return migrated;
@@ -99,7 +103,8 @@ function mountAureliaPlanner() {
   }
 
   function formValue() {
-    return Object.fromEntries(new FormData(form));
+    return { ...Object.fromEntries(new FormData(form)), quote: quoteContext,
+      schedule: input.mode.value === 'custom' ? readSchedule() : null };
   }
 
   function formFingerprint() {
@@ -107,18 +112,23 @@ function mountAureliaPlanner() {
   }
 
   function fill(record) {
+    $('#plan-stages').replaceChildren();
     activeId = record.id;
     draftId = record.id ?? makeId();
     input.name.value = record.name;
     input.start.value = record.start;
+    quoteContext = record.quote ?? null;
     input.budget.value = record.budget === '' ? '' : integer.format(record.budget);
     input.horizon.value = record.horizon;
     input.risk.value = record.risk;
     input.price.value = record.price ?? '';
     input.fee.value = record.fee || '';
     input.fixedFee.value = record.fixedFee || '';
+    input.mode.value = record.schedule ? 'custom' : 'preset';
+    renderSchedule(record.schedule ?? []);
+    showScheduleMode();
     $('#plan-estimate-fields').open = Boolean(record.price || record.fee || record.fixedFee);
-    $('#quote-transfer').hidden = true;
+    renderQuoteContext();
     cleanSettings = formFingerprint();
     hasDraft = false;
     clearErrors();
@@ -132,20 +142,82 @@ function mountAureliaPlanner() {
     return records.find((record) => record.id === activeId);
   }
 
+  function readSchedule() {
+    return [...scheduleLines.children].map((row) => ({
+      id: row.dataset.batch,
+      date: row.querySelector('[data-date]').value,
+      amount: row.querySelector('[data-amount]').value,
+    }));
+  }
+
+  function renderSchedule(rows) {
+    const booked = new Set(activeRecord()?.trades.map(({ batchId }) => batchId));
+    scheduleLines.innerHTML = rows.map(({ id }, index) => `
+      <fieldset class="schedule-line" data-batch="${id}">
+        <legend>${batchName(index)}</legend>
+        <label class="form-field"><span>安排日期</span><input type="date" data-date aria-label="${batchName(index)}安排日期" min="1900-01-01" max="9998-12-31"></label>
+        <label class="form-field"><span>金额（¥）</span><input inputmode="numeric" data-amount aria-label="${batchName(index)}金额"></label>
+        <button type="button" class="text-button" data-remove-batch ${rows.length === 1 || booked.has(id) ? 'disabled' : ''}
+          aria-label="移除${batchName(index)}">移除</button>
+      </fieldset>`).join('');
+    rows.forEach(({ date, amount }, index) => {
+      const row = scheduleLines.children[index];
+      row.querySelector('[data-date]').value = date;
+      row.querySelector('[data-amount]').value = amount;
+    });
+    $('#add-batch').disabled = rows.length >= maxBatches;
+  }
+
+  function showScheduleMode() {
+    const custom = input.mode.value === 'custom';
+    $('#preset-setup').hidden = custom;
+    $('#schedule-editor').hidden = !custom;
+  }
+
+  function switchSchedule() {
+    if (input.mode.value === 'custom' && !scheduleLines.children.length) {
+      const settings = formValue();
+      const hasBudget = parseBudget(settings.budget) !== null;
+      renderSchedule(presetSchedule({ ...settings, start: input.start.value || today() })
+        .map((row) => ({ ...row, amount: hasBudget ? row.amount : '' })));
+    } else if (input.mode.value === 'preset' && activeRecord()?.trades.some(({ batchId }) => !/^batch-[1-3]$/.test(batchId))) {
+      input.mode.value = 'custom';
+      setText('#save-status', '自定义批次已有成交，保留这些批次后可继续调整。');
+      return;
+    }
+    showScheduleMode();
+    updateDraft();
+  }
+
+  function renderQuoteContext() {
+    $('#quote-transfer').hidden = !quoteContext;
+    if (quoteContext) setText('#quote-transfer', '采用 ' + quoteContext.name + ' 的报价（'
+      + quoteDate.format(quoteContext.quotedAt) + '）。固定费用按每批一次计算。');
+  }
+
   function renderCurrentPlan(settings = formValue()) {
     const budget = parseBudget(settings.budget);
-    $('#quick-preview').hidden = budget === null;
-    if (budget !== null) {
-      buildPlan(settings).stages.forEach(({ amount }, index) => setText(previewIds[index], yuan(amount)));
-    }
     const { value, errors } = validate(settings);
+    const preview = value ? estimate(value).stages : budget !== null && !settings.schedule ? presetSchedule(settings) : [];
+    $('#quick-preview').hidden = !preview.length;
+    const head = preview.slice(0, 3);
+    const previewRows = head.map(({ amount }, index) => [batchName(index), amount]);
+    if (preview.length > head.length) previewRows.push(['其余 ' + (preview.length - head.length) + ' 批',
+      preview.slice(head.length).reduce((sum, { amount }) => sum + amount, 0)]);
+    $('#quick-preview').innerHTML = previewRows.map(([label, amount]) => `<div><dt>${label}</dt><dd>${yuan(amount)}</dd></div>`).join('');
+    if (settings.schedule) {
+      const total = settings.schedule.reduce((sum, row) => sum + BigInt(parseYuan(row.amount) ?? 0), 0n);
+      const delta = budget === null ? 0n : BigInt(budget) - total;
+      setText('#schedule-status', '已分配 ¥' + integer.format(total) + (delta === 0n ? ''
+        : (delta > 0n ? '，尚余 ¥' : '，超出 ¥') + integer.format(delta > 0n ? delta : -delta)));
+    }
     $('#plan-result-content').hidden = !value;
     $('#plan-result-empty').hidden = Boolean(value);
     $('#plan-profile').hidden = !value;
     if (value) {
       renderPlan(value, activeRecord());
     } else {
-      const empty = !String(settings.budget ?? '').trim() ? '输入预算后即可查看三批安排。' : Object.values(errors)[0];
+      const empty = !String(settings.budget ?? '').trim() ? '输入预算后即可试算。' : Object.values(errors)[0];
       setText('#plan-result-empty', empty);
     }
     return value;
@@ -153,32 +225,53 @@ function mountAureliaPlanner() {
 
   function renderPlan(settings, saved) {
     const plan = estimate(settings);
-    const progress = purchaseProgress(plan.budget, saved?.purchases);
+    const trades = saved?.trades ?? [];
+    const savedBatches = new Set(saved ? estimate(saved).stages.map(({ id }) => id) : []);
+    const progress = purchaseProgress(plan.budget, trades);
+    const stageList = $('#plan-stages');
+    const opened = new Set([...stageList.querySelectorAll('details[open]')].map((entry) => entry.dataset.tradeList));
     setText('#plan-total', yuan(plan.budget));
-    setText('#plan-profile', risks[plan.risk].title);
-    setText('#plan-description', horizons[plan.horizon].title + '持有 · ' + plan.description);
+    setText('#plan-profile', plan.stages.length + ' 批');
+    setText('#plan-description', settings.schedule ? '按自定义日期与金额分批。'
+      : horizons[plan.horizon].title + '持有，' + risks[plan.risk].description);
     $('#estimate-summary').hidden = plan.grams === null && plan.fee === 0;
     setText('#plan-grams', plan.grams === null ? '—' : grams.format(plan.grams) + ' 克');
     setText('#plan-fees', preciseYuan(plan.fee));
     $('#plan-progress').hidden = !saved;
-    setText('#purchase-count', '已记录 ' + progress.count + ' / 3 批');
+    const booked = new Set(trades.map(({ batchId }) => batchId));
+    setText('#purchase-count', booked.size + '/' + plan.stages.length + ' 批 · ' + progress.count + ' 笔成交');
     setText('#purchase-spent', preciseYuan(progress.spent));
     setText('#purchase-grams', grams.format(progress.grams) + ' 克');
     setText('#purchase-balance-label', progress.remaining < 0 ? '超出预算' : '剩余预算');
     setText('#purchase-balance', preciseYuan(Math.abs(progress.remaining)));
     setText('#purchase-average', progress.average === null ? '—' : preciseYuan(progress.average) + '/克');
     $('#allocation-bar').innerHTML = plan.stages.map(({ weight }) => `<i style="width:${weight}%"></i>`).join('');
-    $('#plan-stages').innerHTML = plan.stages.map(({ weight, amount, date, grams: mass }, index) => {
-      const purchase = saved?.purchases?.[index];
+    stageList.innerHTML = plan.stages.map(({ id, weight, amount, date, grams: mass }, index) => {
+      const entries = trades.filter(({ batchId }) => batchId === id).reverse().sort((a, b) => b.date.localeCompare(a.date));
+      const byBatch = purchaseProgress(amount, entries);
       return `<li>
-        <div class="stage-label"><strong>${batchNames[index]}</strong><span>${date} · ${index ? '复盘' : '计划起点'}</span></div>
-        <div class="stage-amount numeric"><strong>${yuan(amount)}</strong><span>${weight}%${mass === null ? '' : ' · ' + grams.format(mass) + ' 克'}</span></div>
-        ${saved ? `<div class="stage-purchase">
-          <span>${purchase ? purchase.date + ' · ' + grams.format(purchase.grams) + ' 克 · ' + preciseYuan(purchase.paid) : '待记录'}</span>
-          <button type="button" class="outline-button" data-purchase="${index}" aria-label="${batchNames[index]} · ${purchase ? '编辑买入记录' : '记录买入'}">${purchase ? '编辑记录' : '记录买入'}</button>
-        </div>` : ''}
+        <div class="stage-label"><strong>${batchName(index)}</strong><span>${date}</span></div>
+        <div class="stage-amount numeric"><strong>${yuan(amount)}</strong><span>${ratios.format(weight)}%${mass === null ? '' : ' · ' + grams.format(mass) + ' 克'}</span></div>
+        ${savedBatches.has(id) ? `<div class="stage-purchase">
+          <span>${entries.length ? grams.format(byBatch.grams) + ' 克 · ' + preciseYuan(byBatch.spent) : '未记录成交'}</span>
+          <button type="button" class="outline-button" data-purchase="${id}" aria-label="${batchName(index)}记一笔">记一笔</button>
+        </div>
+        ${entries.length ? `<details class="batch-trades" data-trade-list="${id}" ${opened.has(id) ? 'open' : ''}>
+          <summary>查看 ${entries.length} 笔成交</summary>
+          <ul>${entries.map((trade) => `<li class="trade-line"><span><time datetime="${trade.date}">${trade.date}</time>
+            <small data-trade-note="${trade.id}"></small></span><span><strong>${preciseYuan(trade.paid)}</strong>
+            <small>${grams.format(trade.grams)} 克</small></span>
+            <button type="button" class="text-button" data-purchase="${id}" data-trade="${trade.id}">编辑</button></li>`).join('')}</ul>
+        </details>` : ''}` : saved ? '<p class="stage-purchase">保存批次后即可记录成交。</p>' : ''}
       </li>`;
     }).join('');
+    for (const trade of trades) {
+      const note = stageList.querySelector(`[data-trade-note="${trade.id}"]`);
+      if (note) note.textContent = trade.note;
+    }
+    scheduleLines.querySelectorAll('[data-remove-batch]').forEach((button) => {
+      button.disabled = scheduleLines.children.length === 1 || booked.has(button.closest('[data-batch]').dataset.batch);
+    });
   }
 
   function clearErrors() {
@@ -198,6 +291,7 @@ function mountAureliaPlanner() {
       target.setAttribute('aria-invalid', 'true');
       target.focus();
     }
+    if (field === 'schedule') scheduleLines.querySelector('[data-amount]')?.focus();
     setText('#plan-error', message);
     $('#plan-error').hidden = false;
     return null;
@@ -228,16 +322,16 @@ function mountAureliaPlanner() {
     $('#plan-overview').hidden = !records.length;
     $('#jump-to-progress').hidden = !current;
     setText('#plan-overview-name', current?.name ?? '新计划');
-    setText('#plan-overview-summary', current ? '已记录 ' + purchaseProgress(current.budget, current.purchases).count + ' / 3 批'
-      : '已有 ' + records.length + ' 份计划');
+    const recent = current?.trades.slice().reverse().sort((a, b) => b.date.localeCompare(a.date))[0];
+    setText('#plan-overview-summary', current ? '预算 ' + yuan(current.budget) + (recent
+      ? '，最近买入 ' + recent.date + ' · ' + preciseYuan(recent.paid) : '，等待登记成交') : '已有 ' + records.length + ' 份计划');
     list.replaceChildren(...ordered.map((record) => {
       const row = document.createElement('li');
       const description = document.createElement('div');
       const title = document.createElement('strong');
       const detail = document.createElement('span');
       title.textContent = record.name;
-      const progress = purchaseProgress(record.budget, record.purchases);
-      detail.textContent = yuan(record.budget) + ' · ' + record.start + ' · 已记录 ' + progress.count + ' / 3 批';
+      detail.textContent = yuan(record.budget) + ' · ' + (record.schedule?.length ?? 3) + ' 批 · ' + record.trades.length + ' 笔成交';
       description.append(title, detail);
       const controls = document.createElement('div');
       controls.className = 'library-actions';
@@ -292,20 +386,30 @@ function mountAureliaPlanner() {
     if (field) purchaseFields.namedItem(field).focus();
   }
 
-  function openPurchase(index) {
+  function openPurchase(batchId, tradeId) {
     const record = currentRecords().find((item) => item.id === activeId);
     if (!record) {
       setText('#purchase-status', '找不到这份已保存的计划。请先重新保存。');
       return;
     }
-    const entry = record.purchases[index];
-    editingPurchase = { id: record.id, index, original: JSON.stringify(entry) };
+    const batch = estimate(record).stages.findIndex((stage) => stage.id === batchId);
+    const entry = record.trades.find((trade) => trade.id === tradeId && trade.batchId === batchId);
+    if (batch < 0 || (tradeId && !entry)) {
+      setText('#purchase-status', '这项记录已更新，请重新打开计划。');
+      return;
+    }
+    if (!entry && record.trades.length >= maxTrades) {
+      setText('#purchase-status', '此计划已记录 ' + maxTrades + ' 笔。可导出后另建计划。');
+      return;
+    }
+    editingPurchase = { id: record.id, batchId, tradeId, original: JSON.stringify(entry) };
     purchaseFields.date.value = entry?.date ?? today();
     purchaseFields.date.max = today();
     purchaseFields.paid.value = entry?.paid ?? '';
     purchaseFields.grams.value = entry?.grams ?? '';
+    purchaseFields.note.value = entry?.note ?? '';
     setText('#purchase-title', entry ? '编辑买入记录' : '记录实际买入');
-    setText('#purchase-context', record.name + ' · ' + batchNames[index] + '。每批保留一笔记录，可填写该批汇总。');
+    setText('#purchase-context', record.name + ' · ' + batchName(batch));
     $('#purchase-remove').hidden = !entry;
     purchaseError('');
     dialog.showModal();
@@ -313,24 +417,33 @@ function mountAureliaPlanner() {
   }
 
   function savePurchase(purchase) {
-    const { id, index, original } = editingPurchase;
+    const { id, batchId, tradeId, original } = editingPurchase;
     const existing = currentRecords();
     const record = existing.find((item) => item.id === id);
-    if (!record || JSON.stringify(record.purchases[index]) !== original) {
+    if (!record || !estimate(record).stages.some((stage) => stage.id === batchId)
+      || (tradeId && JSON.stringify(record.trades.find((trade) => trade.id === tradeId)) !== original)) {
       purchaseError('此记录已在另一标签页更新。请关闭后重新打开。');
       return;
     }
-    const purchases = record.purchases.slice();
-    purchases[index] = purchase;
-    const next = normalizeRecord({ ...record, purchases, updatedAt: Date.now() });
+    const trades = record.trades.filter((trade) => trade.id !== tradeId);
+    if (purchase) {
+      if (trades.length >= maxTrades) {
+        purchaseError('本计划已达到成交记录上限。');
+        return;
+      }
+      trades.push({ ...purchase, id: tradeId ?? makeId(), batchId });
+    }
+    const next = normalizeRecord({ ...record, trades, updatedAt: Date.now() });
     const saved = saveRecords(existing.map((item) => item.id === id ? next : item));
     renderCurrentPlan();
+    const details = $(`[data-trade-list="${batchId}"]`);
+    if (details && purchase) details.open = true;
     setText('#purchase-status', saved ? (purchase ? '已保存买入记录。' : '已删除买入记录。')
       : '当前页面已保留变更，请下载备份。');
     dialog.close();
   }
 
-  function applyQuote(pricing, side) {
+  function applyQuote(pricing, quote) {
     if (activeId) {
       if (!canLeaveDraft()) return;
       fill(defaults());
@@ -339,85 +452,10 @@ function mountAureliaPlanner() {
     input.fee.value = pricing.fee || '';
     input.fixedFee.value = pricing.fixedFee || '';
     $('#plan-estimate-fields').open = true;
-    const note = '已带入渠道 ' + side + ' 的买入单价和费用。'
-      + (pricing.fixedFee ? '固定费按每批一次计入，可在估算设置里修改。' : '输入预算即可估算克数。');
-    setText('#quote-transfer', note);
-    $('#quote-transfer').hidden = false;
+    quoteContext = quote;
+    renderQuoteContext();
     updateDraft();
     location.hash = '#/plan';
-  }
-
-  function mountComparison() {
-    const comparison = $('#comparison-form');
-    const fields = [
-      ['buy', '买入单价（¥/克）', '例如 780'],
-      ['sell', '回购单价（¥/克，选填）', '例如 760'],
-      ['fixed', '整笔工费或固定费（¥）', '0'],
-      ['buyRate', '额外买入费率（%）', '0'],
-      ['sellRate', '额外回购费率（%）', '0'],
-    ];
-    const sides = ['A', 'B'];
-    comparison.innerHTML = sides.map((side) => {
-      const field = ([name, label, placeholder]) =>
-        `<label class="form-field"><span>${label}</span><input name="${side}-${name}" inputmode="decimal" placeholder="${placeholder}" aria-describedby="compare-${side}-status"></label>`;
-      return `<fieldset class="offer">
-        <legend>渠道 ${side}</legend>
-        <div class="form-fields">${fields.slice(0, 2).map(field).join('')}</div>
-        <details class="method-note offer-fees"><summary>填写额外费用</summary>
-          <div class="form-fields">${fields.slice(2).map(field).join('')}</div>
-        </details>
-        <p class="field-hint" id="compare-${side}-status"></p>
-        <dl class="offer-results" id="compare-${side}-results" hidden></dl>
-        <div class="offer-actions" id="compare-${side}-actions" hidden>
-          <button type="button" class="outline-button" id="use-quote-${side}" aria-label="用渠道 ${side} 报价试算计划">用此报价做计划</button>
-        </div>
-      </fieldset>`;
-    }).join('');
-
-    const pricingBySide = new Map();
-    for (const side of sides) {
-      $('#use-quote-' + side).addEventListener('click', () => {
-        const pricing = pricingBySide.get(side);
-        if (pricing) applyQuote(pricing, side);
-      });
-    }
-
-    function renderComparison() {
-      const data = new FormData(comparison);
-      const amountField = $('#compare-grams');
-      const results = sides.map((side) => {
-        const offer = Object.fromEntries(fields.map(([name]) => [name, data.get(side + '-' + name)]));
-        const { errors, pricing, result } = priceComparison(data.get('grams'), offer);
-        pricingBySide.set(side, pricing);
-        amountField.toggleAttribute('aria-invalid', Boolean(errors.grams));
-        for (const [name] of fields) {
-          comparison.elements.namedItem(side + '-' + name).toggleAttribute('aria-invalid', Boolean(errors[name]));
-        }
-        const issue = fields.map(([name]) => errors[name]).find(Boolean);
-        setText('#compare-' + side + '-status', issue || '');
-        const output = $('#compare-' + side + '-results');
-        output.hidden = !result;
-        $('#compare-' + side + '-actions').hidden = !result;
-        if (!result) return { result, error: errors.grams };
-        const amounts = [['买入总价', result.total], ['含费克价', result.unit], ['回购保本价 / 克', result.breakEven]];
-        if (result.netSale !== null) amounts.push(['回购净额', result.netSale], ['按此报价盈亏', result.difference]);
-        output.innerHTML = amounts.map(([label, value]) => `<div><dt>${label}</dt><dd>${preciseYuan(value)}</dd></div>`).join('');
-        return { result };
-      });
-      const [first, second] = results;
-      let summary = first.error || '填入一个渠道即可试算，填入两个渠道即可比较。';
-      if (first.result && second.result) {
-        const delta = first.result.total - second.result.total;
-        summary = costs.format(Math.abs(delta)) === '0.00' ? '两渠道的买入总价相差不足 ¥0.01。'
-          : '同等克重下，渠道 ' + (delta < 0 ? 'A' : 'B') + ' 的买入总价低 ' + preciseYuan(Math.abs(delta)) + '。';
-      }
-      setText('#comparison-summary', summary);
-    }
-    $('#compare-grams').setAttribute('aria-describedby', 'comparison-summary');
-    comparison.addEventListener('submit', (event) => event.preventDefault());
-    comparison.addEventListener('input', renderComparison);
-    $('#compare-grams').addEventListener('input', renderComparison);
-    renderComparison();
   }
 
   renderChoices('#horizon-choices', 'horizon', horizons);
@@ -426,7 +464,14 @@ function mountAureliaPlanner() {
   fill(records.slice().sort((a, b) => b.updatedAt - a.updatedAt)[0] ?? defaults());
   setText('#library-status', notice);
   form.addEventListener('input', (event) => {
-    if (['price', 'fee', 'fixedFee'].includes(event.target.name)) $('#quote-transfer').hidden = true;
+    if (event.target.name === 'mode') {
+      switchSchedule();
+      return;
+    }
+    if (['price', 'fee', 'fixedFee'].includes(event.target.name)) {
+      quoteContext = null;
+      renderQuoteContext();
+    }
     updateDraft();
   });
   $('#new-plan').addEventListener('click', () => {
@@ -436,6 +481,36 @@ function mountAureliaPlanner() {
   });
   $('#jump-to-progress').addEventListener('click', () => jumpTo('#plan-result', '#result-title'));
   $('#jump-to-library').addEventListener('click', () => jumpTo('.library-card', '#library-title'));
+  $('#add-batch').addEventListener('click', () => {
+    const rows = readSchedule();
+    if (rows.length >= maxBatches) return;
+    rows.push({ id: makeId(), date: rows.at(-1)?.date || today(), amount: '' });
+    renderSchedule(rows);
+    updateDraft();
+    scheduleLines.lastElementChild.querySelector('[data-date]').focus();
+  });
+  $('#split-evenly').addEventListener('click', () => {
+    const budget = parseBudget(input.budget.value);
+    const rows = readSchedule();
+    if (!budget || !rows.length) {
+      setText('#save-status', '输入总预算后即可均分。');
+      input.budget.focus();
+      return;
+    }
+    const equal = Math.floor(budget / rows.length);
+    const remainder = budget % rows.length;
+    rows.forEach((row, index) => { row.amount = equal + Number(index < remainder); });
+    renderSchedule(rows);
+    updateDraft();
+  });
+  scheduleLines.addEventListener('click', (event) => {
+    const remove = event.target.closest('[data-remove-batch]');
+    if (!remove || remove.disabled) return;
+    const id = remove.closest('[data-batch]').dataset.batch;
+    renderSchedule(readSchedule().filter((row) => row.id !== id));
+    updateDraft();
+    $('#add-batch').focus();
+  });
 
   document.querySelectorAll('[data-budget]').forEach((button) => {
     button.addEventListener('click', () => {
@@ -451,7 +526,12 @@ function mountAureliaPlanner() {
     const existing = currentRecords();
     const prior = existing.find((record) => record.id === activeId);
     const id = prior?.id ?? (activeId ? makeId() : draftId);
-    const record = normalizeRecord({ ...settings, id, updatedAt: Date.now(), purchases: prior?.purchases });
+    if (prior?.trades.some((trade) => !(settings.schedule ?? presetSchedule(settings)).some((row) => row.id === trade.batchId))) {
+      setText('#save-status', '被移除的批次已有成交。请保留批次，或先处理相关记录。');
+      return;
+    }
+    const schedule = settings.schedule?.slice().sort((a, b) => a.date.localeCompare(b.date));
+    const record = normalizeRecord({ ...settings, schedule, id, updatedAt: Date.now(), trades: prior?.trades });
     const saved = saveRecords([record, ...existing.filter((item) => item.id !== id)]);
     fill(record);
     setText('#save-status', saved ? '计划已保存。' : '当前页面已保留计划。请下载备份以便恢复。');
@@ -465,7 +545,7 @@ function mountAureliaPlanner() {
     const settings = checkedForm();
     if (!settings) return;
     const saved = currentRecords().find((record) => record.id === activeId);
-    download('Aurelia-分批计划.csv', planCsv({ ...settings, purchases: saved?.purchases }, estimate(settings)), 'text/csv;charset=utf-8');
+    download('Aurelia-分批计划.csv', planCsv({ ...settings, trades: saved?.trades }, estimate(settings)), 'text/csv;charset=utf-8');
   });
   $('#download-calendar').addEventListener('click', () => {
     const settings = checkedForm();
@@ -478,7 +558,7 @@ function mountAureliaPlanner() {
     const file = fileInput.files[0];
     if (!file) return;
     try {
-      if (file.size > 2 * 1024 * 1024) throw Error('Backup is too large');
+      if (file.size > 16 * 1024 * 1024) throw Error('Backup is too large');
       const incoming = decodeBackup(await file.text());
       const existing = currentRecords();
       const combined = mergeRecords(existing, incoming, makeId);
@@ -508,13 +588,14 @@ function mountAureliaPlanner() {
   $('#use-reference').addEventListener('click', () => {
     if (!reference) return;
     input.price.value = reference.cny.toFixed(2);
-    $('#quote-transfer').hidden = true;
+    quoteContext = null;
+    renderQuoteContext();
     updateDraft();
   });
 
   $('#plan-stages').addEventListener('click', (event) => {
     const button = event.target.closest('[data-purchase]');
-    if (button) openPurchase(Number(button.dataset.purchase));
+    if (button) openPurchase(button.dataset.purchase, button.dataset.trade);
   });
 
   purchaseForm.addEventListener('submit', (event) => {
@@ -532,15 +613,17 @@ function mountAureliaPlanner() {
   });
   $('#purchase-cancel').addEventListener('click', () => dialog.close());
   $('#purchase-remove').addEventListener('click', () => {
-    if (editingPurchase && window.confirm('删除这批买入记录？')) savePurchase(null);
+    if (editingPurchase?.tradeId && window.confirm('删除这笔成交？')) savePurchase(null);
   });
   dialog.addEventListener('close', () => {
     if (editingPurchase?.id === activeId) {
-      $(`[data-purchase="${editingPurchase.index}"]`)?.focus({ preventScroll: true });
+      const { batchId, tradeId } = editingPurchase;
+      const target = tradeId ? $(`[data-purchase="${batchId}"][data-trade="${tradeId}"]`) : null;
+      (target ?? $(`[data-purchase="${batchId}"]`))?.focus({ preventScroll: true });
     }
     editingPurchase = undefined;
   });
-  mountComparison();
+  mountAureliaComparison({ applyQuote, download, makeId, jumpTo });
 
   return {
     setReference(value) {

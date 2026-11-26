@@ -3,9 +3,11 @@
 const aureliaPlans = (() => {
   const model = typeof module === 'object' && module.exports ? require('./model.js') : aureliaModel;
   const { validDate, isoDay } = typeof module === 'object' && module.exports ? require('./market.js') : aureliaMarket;
-  const storageKey = 'aurelia-plans-v2';
-  const previousStorageKey = 'aurelia-plans-v1';
+  const storageKey = 'aurelia-plans-v3';
+  const previousStorageKeys = ['aurelia-plans-v2', 'aurelia-plans-v1'];
   const backupFormat = 'aurelia.plans';
+  const maxBatches = 24;
+  const maxTrades = 1000;
   const day = 86400000;
 
   function today(date = new Date()) {
@@ -24,17 +26,52 @@ const aureliaPlans = (() => {
     return /^\d+(?:\.\d+)?$/.test(text) && (text.split('.')[1]?.length ?? 0) <= places && amount <= max ? amount : NaN;
   }
 
+  const isId = (value) => typeof value === 'string' && /^[a-z0-9-]{1,80}$/i.test(value);
+  const isDate = (value) => validDate(value) && value >= '1900-01-01' && value <= '9998-12-31';
+  const isTimestamp = (value) => Number.isFinite(value) && value >= 0 && value <= 8640000000000000;
+  const cleanLabel = (value, limit) => typeof value === 'string' && value.trim().length <= limit && !/[\r\n\t]/.test(value)
+    ? value.trim() : '';
+
+  function presetSchedule(settings) {
+    return model.buildPlan(settings).stages.map(({ amount, days, weight }, index) => ({
+      id: 'batch-' + (index + 1), date: isDate(settings.start) ? addDays(settings.start, days) : '', amount, weight,
+    }));
+  }
+
+  function normalizeSchedule(rows, budget) {
+    if (!Array.isArray(rows) || !rows.length || rows.length > maxBatches) {
+      return { error: '请保留 1–' + maxBatches + ' 个批次。' };
+    }
+    const ids = new Set();
+    const schedule = [];
+    let remaining = budget;
+    for (const row of rows) {
+      const amount = model.parseYuan(row?.amount);
+      if (!isId(row?.id) || ids.has(row.id) || !isDate(row.date) || amount === null || amount < 1) {
+        return { error: '每个批次都需要有效日期和至少 ¥1 的整数金额。' };
+      }
+      ids.add(row.id);
+      schedule.push({ id: row.id, date: row.date, amount });
+      if (amount > remaining) return { error: '批次金额超出总预算。' };
+      remaining -= amount;
+    }
+    if (remaining) return { error: '批次金额合计须等于总预算。' };
+    return { schedule };
+  }
+
   function validate(input) {
     const budget = model.parseBudget(input?.budget);
     const name = typeof input?.name === 'string' ? input.name.trim() : '';
     const price = decimal(input?.price, 1000000);
     const fee = decimal(input?.fee, 100) ?? 0;
     const fixedFee = decimal(input?.fixedFee, 1000000) ?? 0;
-    const start = input?.start;
+    const scheduleInput = input?.schedule;
+    const custom = scheduleInput !== null && scheduleInput !== undefined;
+    const start = custom && Array.isArray(scheduleInput) ? scheduleInput[0]?.date : input?.start;
     const errors = {};
     if (!name || name.length > 60 || /[\r\n\t]/.test(name)) errors.name = '请输入 1–60 字的计划名称。';
     if (budget === null) errors.budget = '请输入不少于 ¥1,000 的整数预算，最高 ¥9,007,199,254,740,991。';
-    if (!validDate(start) || start < '1900-01-01' || start > '9998-12-31') errors.start = '请输入有效起始日期。';
+    if (!custom && !isDate(start)) errors.start = '请输入有效起始日期。';
     if (Number.isNaN(price) || price === 0) errors.price = '请输入大于 0、不超过 ¥1,000,000 的单价，至多两位小数。';
     if (Number.isNaN(fee)) errors.fee = '请输入 0–100% 的费率，至多两位小数。';
     if (Number.isNaN(fixedFee)) errors.fixedFee = '请输入 0–1,000,000 元的单批固定费用，至多两位小数。';
@@ -42,8 +79,13 @@ const aureliaPlans = (() => {
       errors.settings = '请选择持有周期和分批比例。';
     }
     if (Object.keys(errors).length) return { errors, value: null };
-    const value = { name, budget, start, price, fee, fixedFee, horizon: input.horizon, risk: input.risk };
-    if (fixedFee && model.buildPlan(value).stages.some(({ amount }) => amount <= fixedFee)) {
+    const { schedule = null, error } = custom ? normalizeSchedule(scheduleInput, budget) : {};
+    if (error) return { errors: { schedule: error }, value: null };
+    const quote = input.quote && cleanLabel(input.quote.name, 60) && isTimestamp(input.quote.quotedAt)
+      ? { name: cleanLabel(input.quote.name, 60), quotedAt: input.quote.quotedAt } : null;
+    const value = { name, budget, start: schedule ? schedule.map(({ date }) => date).sort()[0] : start, price, fee, fixedFee,
+      horizon: input.horizon, risk: input.risk, schedule, quote };
+    if (fixedFee && (schedule ?? presetSchedule(value)).some(({ amount }) => amount <= fixedFee)) {
       errors.fixedFee = '每批固定费用须低于所有单批预算。可调整费用或预算。';
       return { errors, value: null };
     }
@@ -51,13 +93,16 @@ const aureliaPlans = (() => {
   }
 
   function estimate(input) {
-    const base = model.buildPlan(input);
-    const stages = base.stages.map((stage) => {
+    const { budget, horizon, risk } = input;
+    const rows = input.schedule
+      ? input.schedule.slice().sort((a, b) => a.date.localeCompare(b.date)).map((row) => ({ ...row, weight: row.amount / budget * 100 }))
+      : presetSchedule(input);
+    const stages = rows.map((stage) => {
       const net = (stage.amount - (input.fixedFee ?? 0)) / (1 + input.fee / 100);
-      return { ...stage, date: addDays(input.start, stage.days), fee: stage.amount - net,
+      return { ...stage, fee: stage.amount - net,
         grams: input.price === null ? null : net / input.price };
     });
-    return { ...base, stages, fee: stages.reduce((sum, stage) => sum + stage.fee, 0),
+    return { budget, horizon, risk, stages, fee: stages.reduce((sum, stage) => sum + stage.fee, 0),
       grams: input.price === null ? null : stages.reduce((sum, stage) => sum + stage.grams, 0) };
   }
 
@@ -66,10 +111,12 @@ const aureliaPlans = (() => {
     const paid = decimal(input?.paid, 1000000000);
     const grams = decimal(input?.grams, 1000000, 4);
     const errors = {};
-    if (!validDate(date) || date < '1900-01-01' || date > '9998-12-31') errors.date = '请输入有效的买入日期。';
+    if (!isDate(date)) errors.date = '请输入有效的买入日期。';
     if (!paid) errors.paid = '请输入大于 0、不超过 ¥10 亿的实付金额，至多两位小数。';
     if (!grams) errors.grams = '请输入大于 0、不超过 100 万的克数，至多四位小数。';
-    return { errors, value: Object.keys(errors).length ? null : { date, paid, grams } };
+    const note = cleanLabel(input?.note, 80);
+    if (input?.note && !note && String(input.note).trim()) errors.note = '备注最多 80 字，请使用单行文字。';
+    return { errors, value: Object.keys(errors).length ? null : { date, paid, grams, note } };
   }
 
   function purchaseProgress(budget, purchases = []) {
@@ -81,29 +128,36 @@ const aureliaPlans = (() => {
 
   function normalizeRecord(raw) {
     const { value } = validate(raw);
-    if (!value || typeof raw.id !== 'string' || !/^[a-z0-9-]{1,80}$/i.test(raw.id)
-      || !Number.isFinite(raw.updatedAt) || raw.updatedAt < 0 || raw.updatedAt > 8640000000000000) {
+    if (!value || !isId(raw.id) || !isTimestamp(raw.updatedAt)) {
       throw Error('Invalid plan');
     }
-    const purchases = raw.purchases === undefined ? [null, null, null] : raw.purchases;
-    if (!Array.isArray(purchases) || purchases.length !== 3) throw Error('Invalid purchase records');
-    const normalizedPurchases = purchases.map((entry) => {
-      if (entry === null) return null;
-      const purchase = validatePurchase(entry).value;
-      if (!purchase) throw Error('Invalid purchase');
-      return purchase;
+    let trades = raw.trades;
+    if (trades === undefined) {
+      const legacy = raw.purchases ?? [null, null, null];
+      if (!Array.isArray(legacy) || legacy.length !== 3) throw Error('Invalid legacy records');
+      trades = legacy.flatMap((entry, index) => entry === null ? []
+        : [{ ...entry, id: 'legacy-' + (index + 1), batchId: 'batch-' + (index + 1) }]);
+    }
+    if (!Array.isArray(trades) || trades.length > maxTrades) throw Error('Invalid trade list');
+    const batches = new Set((value.schedule ?? presetSchedule(value)).map(({ id }) => id));
+    const ids = new Set();
+    const normalizedTrades = trades.map((entry) => {
+      const trade = validatePurchase(entry).value;
+      if (!trade || !isId(entry.id) || ids.has(entry.id) || !batches.has(entry.batchId)) throw Error('Invalid trade');
+      ids.add(entry.id);
+      return { ...trade, id: entry.id, batchId: entry.batchId };
     });
-    return { ...value, id: raw.id, updatedAt: raw.updatedAt, purchases: normalizedPurchases };
+    return { ...value, id: raw.id, updatedAt: raw.updatedAt, trades: normalizedTrades };
   }
 
   function decodeBackup(text) {
     const data = JSON.parse(text);
-    if (data?.format !== backupFormat || ![1, 2].includes(data.version) || !Array.isArray(data.plans)) throw Error('Invalid backup');
+    if (data?.format !== backupFormat || ![1, 2, 3].includes(data.version) || !Array.isArray(data.plans)) throw Error('Invalid backup');
     return data.plans.map(normalizeRecord);
   }
 
   function encodeBackup(records) {
-    return JSON.stringify({ format: backupFormat, version: 2, plans: records }, null, 2);
+    return JSON.stringify({ format: backupFormat, version: 3, plans: records }, null, 2);
   }
 
   function mergeRecords(existing, incoming, makeId) {
@@ -132,11 +186,14 @@ const aureliaPlans = (() => {
   }
 
   function planCsv(input, result) {
-    const headers = ['计划', '批次', '起点/复盘日期', '预算(CNY)', '比例(%)', '预估费用(CNY)', '预估克数', '买入日期', '实际支付(CNY)', '实际克数'];
-    const rows = result.stages.map((stage, index) => {
-      const purchase = input.purchases?.[index];
-      return [input.name, index + 1, stage.date, stage.amount, stage.weight, stage.fee.toFixed(2), stage.grams?.toFixed(3),
-        purchase?.date, purchase?.paid?.toFixed(2), purchase?.grams];
+    const headers = ['行类型', '计划', '批次', '安排日期', '预算(CNY)', '比例(%)', '预估费用(CNY)', '预估克数', '成交日期', '实际支付(CNY)', '实际克数', '备注'];
+    const rows = result.stages.flatMap((stage, index) => {
+      const entries = input.trades?.filter((trade) => trade.batchId === stage.id) ?? [];
+      return [
+        ['预算', input.name, index + 1, stage.date, stage.amount, stage.weight.toFixed(2), stage.fee.toFixed(2), stage.grams?.toFixed(4)],
+        ...entries.sort((a, b) => a.date.localeCompare(b.date)).map((trade) =>
+          ['成交', input.name, index + 1, stage.date, '', '', '', '', trade.date, trade.paid.toFixed(2), trade.grams, trade.note]),
+      ];
     });
     return '\ufeff' + [headers, ...rows].map((row) => row.map(csvCell).join(',')).join('\r\n');
   }
@@ -160,7 +217,8 @@ const aureliaPlans = (() => {
     const total = amount * buy * (1 + buyRate / 100) + fixed;
     const sellFactor = 1 - sellRate / 100;
     const netSale = sell === null ? null : amount * sell * sellFactor;
-    return { errors, pricing: { price: buy, fee: buyRate, fixedFee: fixed }, result: {
+    return { errors, quantity: amount, offer: { buy, sell, fixed, buyRate, sellRate },
+      pricing: { price: buy, fee: buyRate, fixedFee: fixed }, result: {
       total, unit: total / amount, breakEven: total / amount / sellFactor,
       netSale, difference: netSale === null ? null : netSale - total,
     } };
@@ -194,10 +252,11 @@ const aureliaPlans = (() => {
     const header = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Aurelia//Gold Plan//ZH-CN', 'CALSCALE:GREGORIAN'];
     const events = estimate(input).stages.flatMap((stage, index) => [
       'BEGIN:VEVENT',
-      'UID:' + id + '-' + index + '@aurelia.local',
+      'UID:' + id + '-' + (/^batch-[1-3]$/.test(stage.id) ? Number(stage.id.slice(6)) - 1 : stage.id) + '@aurelia.local',
       'DTSTAMP:' + dateStamp,
       'DTSTART;VALUE=DATE:' + stage.date.replaceAll('-', ''),
-      'SUMMARY:' + calendarText(input.name + (index ? ' · 第' + (index + 1) + '批复盘' : ' · 计划起点')),
+      'SUMMARY:' + calendarText(input.name + (input.schedule ? ' · 第' + (index + 1) + '批安排'
+        : index ? ' · 第' + (index + 1) + '批复盘' : ' · 计划起点')),
       'DESCRIPTION:' + calendarText('分批预算人民币 ' + stage.amount + ' 元。请在复盘时核对渠道报价与费用。'),
       'TRANSP:TRANSPARENT',
       'END:VEVENT',
@@ -205,8 +264,9 @@ const aureliaPlans = (() => {
     return [...header, ...events, 'END:VCALENDAR'].map(foldCalendarLine).join('\r\n') + '\r\n';
   }
 
-  return { storageKey, previousStorageKey, today, validate, estimate, validatePurchase, purchaseProgress, normalizeRecord, encodeBackup,
-    decodeBackup, mergeRecords, planCsv, priceComparison, planCalendar };
+  return { storageKey, previousStorageKeys, maxBatches, maxTrades, today, validate, estimate, presetSchedule, isId, isTimestamp,
+    cleanLabel, validatePurchase, purchaseProgress, normalizeRecord, encodeBackup, decodeBackup, mergeRecords, planCsv,
+    priceComparison, planCalendar };
 })();
 
 if (typeof module === 'object' && module.exports) module.exports = aureliaPlans;

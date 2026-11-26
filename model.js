@@ -14,11 +14,16 @@ const aureliaModel = (() => {
     long: { title: '3 年以上', days: [0, 135, 270] },
   });
 
-  function parseBudget(value) {
+  function parseYuan(value) {
     const text = String(value ?? '').normalize('NFKC').trim().replace(/^¥\s*/, '');
     if (!/^(?:\d+|\d{1,3}(?:,\d{3})+)$/.test(text)) return null;
     const amount = Number(text.replaceAll(',', ''));
-    return Number.isSafeInteger(amount) && amount >= minimumBudget ? amount : null;
+    return Number.isSafeInteger(amount) ? amount : null;
+  }
+
+  function parseBudget(value) {
+    const amount = parseYuan(value);
+    return amount !== null && amount >= minimumBudget ? amount : null;
   }
 
   function restorePlan(value) {
@@ -47,7 +52,7 @@ const aureliaModel = (() => {
   }
 
   return {
-    defaultPlan, risks, horizons, parseBudget, restorePlan, buildPlan,
+    defaultPlan, risks, horizons, parseYuan, parseBudget, restorePlan, buildPlan,
   };
 })();
 
