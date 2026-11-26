@@ -12,6 +12,13 @@
   --deep: #1e362b;
   --gold: #835b31;
   --focus: #3d6c50;
+  --control-hover: #edf1e9;
+  --control-hover-border: #adbfad;
+  --control-pressed: #e0e9de;
+  --control-selected: #e9f0e6;
+  --control-selected-border: #c3d3c0;
+  --control-disabled: #f1f0eb;
+  --control-disabled-text: #6c7369;
   --field-fill: #f7f7ef;
   --field-border: #dcded1;
   --field-active: #fffdfa;
@@ -31,7 +38,7 @@ a { color: inherit; }
 h1, h2, h3, p, dl, dd, figure, fieldset { margin: 0; }
 fieldset { min-width: 0; padding: 0; border: 0; }
 legend { padding: 0; }
-:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 h1:focus { outline: none; }
 h2 { font-size: 18px; font-weight: 630; line-height: 1.4; }
 .sr-only {
@@ -95,7 +102,6 @@ h2 { font-size: 18px; font-weight: 630; line-height: 1.4; }
   text-decoration: none;
   white-space: nowrap;
 }
-.primary-nav a:hover { background: var(--soft); color: var(--ink); }
 .primary-nav a[aria-current] { color: var(--green); font-weight: 650; }
 .primary-nav a[aria-current]::after {
   position: absolute;
@@ -188,8 +194,6 @@ a.primary-button, a.outline-button, a.text-button { display: inline-flex; align-
   pointer-events: none;
 }
 .chart-data { margin-top: 1px; color: var(--muted); font-size: 12px; }
-.chart-data summary, .method-note summary { width: fit-content; max-width: 100%; padding: 9px 1px; cursor: pointer; font-weight: 530; }
-.chart-data summary:hover, .method-note summary:hover { color: var(--green); }
 .table-scroll { max-height: 210px; overflow: auto; }
 table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
 th, td { padding: 6px; border-bottom: 1px solid var(--line); text-align: left; }
@@ -216,17 +220,15 @@ tbody th { font-weight: 500; }
 .signal-actions a {
   display: inline-flex;
   align-items: center;
-  min-height: 40px;
-  gap: 7px;
-  padding: 0;
-  border: 0;
-  background: none;
+  min-height: 44px;
+  padding: 0 9px;
+  border: 1px solid transparent;
+  border-radius: 8px;
   color: #2f573e;
   font-size: 13px;
   font-weight: 600;
   text-decoration: none;
 }
-.signal-actions a:hover { text-decoration: underline; text-underline-offset: 4px; }
 .factor-section { margin-top: 32px; }
 .factor-section > h2 { margin-bottom: 13px; }
 .factor-grid { display: grid; gap: 14px; }
@@ -235,14 +237,10 @@ tbody th { font-weight: 500; }
 .period-switch label, .choice { position: relative; display: block; cursor: pointer; }
 .period-switch input, .choice input { position: absolute; width: 1px; height: 1px; opacity: 0; }
 .period-switch span { display: grid; min-height: 44px; place-items: center; padding: 0 11px; border-radius: 999px; color: var(--muted); font-size: .8125rem; font-weight: 540; white-space: nowrap; }
-.period-switch input:checked + span { background: var(--surface); box-shadow: 0 1px 4px #403b2518; color: var(--green); font-weight: 660; }
-.period-switch input:focus-visible + span, .choice input:focus-visible + span { outline: 2px solid var(--focus); outline-offset: -2px; }
 .range-switch { display: flex; flex-shrink: 0; gap: 2px; padding: 2px; border: 1px solid var(--line); border-radius: 999px; background: var(--soft); }
 .range-switch label { position: relative; display: block; cursor: pointer; }
 .range-switch input { position: absolute; width: 1px; height: 1px; opacity: 0; }
 .range-switch span { display: grid; min-height: 44px; place-items: center; padding: 0 9px; border-radius: 999px; color: var(--muted); font-size: .8125rem; white-space: nowrap; }
-.range-switch input:checked + span { background: var(--surface); box-shadow: 0 1px 3px #403b2518; color: var(--green); font-weight: 650; }
-.range-switch input:focus-visible + span { outline: 2px solid var(--focus); outline-offset: -2px; }
 .outlook-summary { flex-wrap: wrap; align-items: end; margin-top: 18px; }
 .analysis-unit-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 7px; margin-top: 12px; }
 .analysis-unit-row .source-line { margin-top: 0; }
@@ -275,7 +273,6 @@ tbody th { font-weight: 500; }
 .budget-field label { display: block; }
 .budget-presets { display: flex; flex-wrap: wrap; gap: 5px; margin: 8px 0 5px; }
 .preset-button { min-height: 44px; padding: 2px 10px; border: 1px solid var(--line); border-radius: 999px; background: transparent; color: var(--green); font-size: .875rem; }
-.preset-button:hover { border-color: var(--line); background: var(--sage); }
 .budget-input {
   display: flex;
   align-items: center;
@@ -291,28 +288,14 @@ tbody th { font-weight: 500; }
 .field-hint, .field-error { margin-top: 5px; color: var(--muted); font-size: .875rem; }
 .field-error { color: #8f352a; font-weight: 650; }
 .choices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.choice > span { position: relative; display: grid; height: 100%; min-height: 47px; align-content: center; justify-items: center; gap: 3px; padding: 8px 5px 11px; border: 1px solid var(--line); border-radius: 11px; text-align: center; }
+.choice > span { display: grid; height: 100%; min-height: 47px; align-content: center; justify-items: center; gap: 3px; padding: 8px 5px 11px; border: 1px solid var(--line); border-radius: 11px; text-align: center; }
 .choice strong { font-size: .875rem; font-weight: 550; }
 .choice small { color: var(--muted); font-size: .8125rem; line-height: 1.4; font-variant-numeric: tabular-nums; }
-.choice:hover > span { border-color: #9cb2a2; }
-.choice input:checked + span { border-color: #cbd8c7; background: #edf2e9; color: #294d38; }
-.choice input:checked + span::after {
-  position: absolute;
-  bottom: 4px;
-  left: calc(50% - 6px);
-  width: 12px;
-  height: 2px;
-  border-radius: 2px;
-  background: var(--green);
-  content: "";
-}
 .choice input:checked + span strong { font-weight: 650; }
 .plan-actions { display: flex; flex-wrap: wrap; gap: 6px 12px; margin-top: 24px; }
 .primary-button, .secondary-button { min-height: 45px; padding: 0 14px; border-radius: 999px; font-size: 14px; font-weight: 600; }
 .primary-button { min-width: 139px; border: 1px solid #3c644f; background: #3c644f; color: #fffdf8; }
-.primary-button:hover { background: #315741; }
 .secondary-button { border: 1px solid transparent; background: transparent; color: var(--muted); }
-.secondary-button:hover { border-color: var(--line); color: var(--ink); }
 .save-status { margin-top: 7px; color: var(--muted); font-size: .875rem; }
 .save-status:empty, #purchase-status:empty { display: none; }
 .quick-preview { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 11px; padding: 10px 12px; border-radius: 12px; background: var(--sage); }
@@ -425,7 +408,6 @@ tbody th { font-weight: 500; }
 .source-line { margin-top: 10px; color: var(--faint); font-size: .8125rem; line-height: 1.6; overflow-wrap: anywhere; }
 .source-links { display: flex; flex-wrap: wrap; gap: 5px 16px; }
 .source-links a { text-underline-offset: 3px; }
-.source-links a:hover { color: var(--green); }
 .empty-panel { margin: 15px 0; padding: 14px 16px; border-radius: 10px; background: var(--soft); color: var(--muted); font-size: 13px; }
 .empty-panel:empty { display: none; }
 .outline-button, .text-button {
@@ -438,10 +420,7 @@ tbody th { font-weight: 500; }
   font-size: .875rem;
   font-weight: 560;
 }
-.outline-button:hover { background: var(--sage); }
-button:disabled { cursor: default; color: var(--muted); opacity: .74; }
 .text-button { border-color: transparent; text-align: start; }
-.text-button:hover:not(:disabled) { text-decoration: underline; text-underline-offset: 3px; }
 .refresh-button { flex-shrink: 0; }
 .signal-score strong { font-size: clamp(40px, 5vw, 58px); }
 .signal-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -469,24 +448,10 @@ button:disabled { cursor: default; color: var(--muted); opacity: .74; }
   font-family: var(--sans);
   font-size: 16px;
 }
-.form-field input:focus, .budget-input:focus-within {
-  border-color: var(--field-edge, var(--focus));
-  background: var(--field-active);
-  box-shadow: inset 0 0 0 1px var(--field-edge, var(--focus));
-  outline: none;
-}
-.form-field input[aria-invalid], .budget-input:has(input[aria-invalid]) { --field-edge: var(--field-error); }
-
-@media (forced-colors: active) {
-  .form-field input:focus, .budget-input:focus-within { outline: 2px solid Highlight; outline-offset: -2px; }
-  .choice input:checked + span { border-color: Highlight; }
-  .choice input:checked + span::after { background: Highlight; forced-color-adjust: none; }
-}
 .estimate-fields .form-fields { margin: 0; }
 .estimate-fields { padding: 0 10px 4px; border: 1px solid var(--line); border-radius: 11px; }
-.estimate-fields summary { min-height: 44px; font-size: .9375rem; }
+.estimate-fields summary { font-size: .9375rem; }
 .estimate-fields summary small { margin-left: 3px; font-size: .8125rem; }
-.estimate-fields .text-button { padding-inline: 0; }
 .estimate-summary { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; margin-top: 15px; }
 .estimate-summary dd { color: var(--green); font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .stage-amount span, .quote-metrics dd { overflow-wrap: anywhere; }
@@ -553,7 +518,6 @@ button:disabled { cursor: default; color: var(--muted); opacity: .74; }
 .ledger-actions { display: flex; flex-wrap: wrap; gap: 4px 8px; padding-top: 8px; }
 .quick-preview { grid-template-columns: repeat(auto-fit, minmax(min(5.5rem, 100%), 1fr)); }
 .batch-trades { grid-column: 2 / -1; min-width: 0; color: var(--muted); font-size: .875rem; }
-.batch-trades summary { padding: 8px 0; cursor: pointer; }
 .batch-trades ul { margin: 0; padding: 0; list-style: none; }
 .trade-line {
   display: grid;
@@ -593,4 +557,136 @@ button:disabled { cursor: default; color: var(--muted); opacity: .74; }
 @media (max-width: 360px) {
   .schedule-line { grid-template-columns: minmax(0, 1fr) minmax(0, .8fr); }
   .schedule-line button { grid-column: 2; justify-self: end; }
+}
+
+/* Keep control states together so the same action reads the same across pages. */
+:is(.chart-data, .method-note, .batch-trades) > summary {
+  width: fit-content;
+  max-width: 100%;
+  min-height: 36px;
+  padding: 7px 8px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 530;
+}
+
+.estimate-fields > summary { min-height: 44px; }
+
+:is(button, a:is(.primary-button, .outline-button, .text-button), .primary-nav a, .signal-actions a, summary),
+:is(.period-switch, .range-switch, .choice) input + span,
+.form-field input, .budget-input {
+  transition: background-color .14s ease, border-color .14s ease, color .14s ease;
+}
+
+.primary-button {
+  --hover-fill: #365b46;
+  --hover-edge: #365b46;
+  --pressed-fill: #2a4b39;
+  --focus-edge: #fff3cf;
+  --focus-inset: -4px;
+}
+
+:is(.text-button, .signal-actions a, .primary-nav a, summary) { --hover-edge: transparent; }
+
+.text-button.remove-plan {
+  --hover-fill: #f7ece7;
+  --pressed-fill: #eedbd3;
+  --focus-edge: var(--field-error);
+}
+
+:is(.period-switch, .range-switch, .choice) input + span,
+:is(.preset-button, .outline-button)[aria-current="true"] {
+  position: relative;
+}
+
+:is(.period-switch, .range-switch) input + span {
+  padding-bottom: 4px;
+  border: 1px solid transparent;
+}
+
+:is(.period-switch, .range-switch, .choice) input:checked + span,
+:is(.preset-button, .outline-button)[aria-current="true"] {
+  border-color: var(--control-selected-border);
+  background: var(--control-selected);
+  color: var(--deep);
+}
+
+:is(.period-switch, .range-switch, .choice) input:checked + span::after,
+:is(.preset-button, .outline-button)[aria-current="true"]::after {
+  position: absolute;
+  bottom: 4px;
+  left: calc(50% - 6px);
+  width: 12px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--green);
+  content: "";
+}
+
+:is(.chart-data, .method-note, .batch-trades)[open] > summary {
+  background: var(--control-selected);
+  color: var(--green);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :is(button, a:is(.primary-button, .outline-button, .text-button), .primary-nav a, .signal-actions a, summary):hover:not(:disabled),
+  :is(.period-switch label, .range-switch label, .choice):hover > input:not(:disabled) + span {
+    border-color: var(--hover-edge, var(--control-hover-border));
+    background: var(--hover-fill, var(--control-hover));
+  }
+
+  .form-field input:hover:not(:focus, :focus-within, :disabled), .budget-input:hover:not(:focus-within) {
+    border-color: var(--field-edge, var(--control-hover-border));
+  }
+
+  .source-links a:hover { color: var(--green); }
+}
+
+:is(button, a:is(.primary-button, .outline-button, .text-button), .primary-nav a, .signal-actions a, summary):active:not(:disabled),
+:is(.period-switch label, .range-switch label, .choice):active > input:not(:disabled) + span {
+  background: var(--pressed-fill, var(--control-pressed));
+}
+
+:is(button, a:is(.primary-button, .outline-button, .text-button), .primary-nav a, .signal-actions a, summary):focus-visible,
+:is(.period-switch, .range-switch, .choice) input:focus-visible + span {
+  outline: 2px solid var(--focus-edge, var(--focus));
+  outline-offset: var(--focus-inset, -2px);
+}
+
+button:disabled, .form-field input:disabled,
+:is(.period-switch, .range-switch, .choice) input:disabled + span {
+  border-color: var(--line);
+  background: var(--control-disabled);
+  color: var(--control-disabled-text);
+  cursor: default;
+}
+
+button:is(.text-button, .secondary-button):disabled { border-color: transparent; background: transparent; }
+
+.form-field input:is(:focus, :focus-within), .budget-input:focus-within {
+  border-color: var(--field-edge, var(--focus));
+  background: var(--field-active);
+  box-shadow: inset 0 0 0 1px var(--field-edge, var(--focus));
+  outline: none;
+}
+
+.form-field input[aria-invalid="true"], .budget-input:has(input[aria-invalid="true"]) { --field-edge: var(--field-error); }
+
+@media (forced-colors: active) {
+  .form-field input:is(:focus, :focus-within), .budget-input:focus-within,
+  :is(button, a:is(.primary-button, .outline-button, .text-button), .primary-nav a, .signal-actions a, summary):focus-visible,
+  :is(.period-switch, .range-switch, .choice) input:focus-visible + span {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+
+  :is(.period-switch, .range-switch, .choice) input:checked + span,
+  :is(.preset-button, .outline-button)[aria-current="true"] { border-color: Highlight; }
+
+  :is(.period-switch, .range-switch, .choice) input:checked + span::after,
+  :is(.preset-button, .outline-button)[aria-current="true"]::after {
+    background: Highlight;
+    forced-color-adjust: none;
+  }
 }

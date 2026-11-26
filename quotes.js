@@ -57,6 +57,10 @@ function mountAureliaComparison({ applyQuote, download, makeId, jumpTo }) {
   const { cleanLabel, isTimestamp, mergeRecords, priceComparison, today } = aureliaPlans;
   const pick = (selector) => document.querySelector(selector);
   const setText = (selector, text) => { if (pick(selector).textContent !== text) pick(selector).textContent = text; };
+  const markInvalid = (input, error) => {
+    if (error) input.setAttribute('aria-invalid', 'true');
+    else input.removeAttribute('aria-invalid');
+  };
   const amountText = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const clock = new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium', timeStyle: 'short' });
   const yuan = (value) => (value < 0 ? '−' : '') + '¥' + amountText.format(Math.abs(value));
@@ -182,8 +186,7 @@ function mountAureliaComparison({ applyQuote, download, makeId, jumpTo }) {
       const state = priceComparison(quantityField.value, raw);
       const { errors, result } = state;
       states.set(side, { ...state, name });
-      quantityField.toggleAttribute('aria-invalid', Boolean(errors.grams));
-      for (const [key] of fields) field(side, key).toggleAttribute('aria-invalid', Boolean(errors[key]));
+      for (const [key] of fields) markInvalid(field(side, key), errors[key]);
       setText('#compare-' + side + '-status', fields.map(([key]) => errors[key]).find(Boolean) || '');
       const output = pick('#compare-' + side + '-results');
       output.hidden = !result;
@@ -204,6 +207,7 @@ function mountAureliaComparison({ applyQuote, download, makeId, jumpTo }) {
       return { result, name, errors };
     });
     const [first, second] = results;
+    markInvalid(quantityField, first.errors.grams);
     let summary = first.errors.grams || '填入渠道买入单价后显示含费成本。';
     if (first.result && second.result) {
       const delta = first.result.total - second.result.total;

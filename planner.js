@@ -16,6 +16,7 @@ function mountAureliaPlanner() {
 
   const form = $('#plan-form');
   const input = form.elements;
+  const budgetButtons = [...form.querySelectorAll('[data-budget]')];
   const fileInput = $('#plan-import-file');
   const dialog = $('#purchase-dialog');
   const purchaseForm = $('#purchase-form');
@@ -197,6 +198,10 @@ function mountAureliaPlanner() {
 
   function renderCurrentPlan(settings = formValue()) {
     const budget = parseBudget(settings.budget);
+    for (const button of budgetButtons) {
+      if (Number(button.dataset.budget) === budget) button.setAttribute('aria-current', 'true');
+      else button.removeAttribute('aria-current');
+    }
     const { value, errors } = validate(settings);
     const preview = value ? estimate(value).stages : budget !== null && !settings.schedule ? presetSchedule(settings) : [];
     $('#quick-preview').hidden = !preview.length;
@@ -335,11 +340,13 @@ function mountAureliaPlanner() {
       description.append(title, detail);
       const controls = document.createElement('div');
       controls.className = 'library-actions';
-      controls.append(action(record.id === activeId ? '正在编辑' : '编辑', 'outline-button', () => {
+      const edit = action(record.id === activeId ? '正在编辑' : '编辑', 'outline-button', () => {
         if (!canLeaveDraft()) return;
         fill(record);
         input.budget.focus();
-      }), action('日历', 'outline-button', () => exportCalendar(record, record.id)), action('删除', 'text-button remove-plan', () => {
+      });
+      if (record.id === activeId) edit.setAttribute('aria-current', 'true');
+      controls.append(edit, action('日历', 'outline-button', () => exportCalendar(record, record.id)), action('删除', 'text-button remove-plan', () => {
         if (!window.confirm('删除计划「' + record.name + '」？')) return;
         const saved = saveRecords(currentRecords().filter((item) => item.id !== record.id));
         if (activeId === record.id) {
@@ -381,7 +388,8 @@ function mountAureliaPlanner() {
     target.textContent = message;
     target.hidden = !message;
     for (const input of purchaseForm.querySelectorAll('input')) {
-      input.toggleAttribute('aria-invalid', input.name === field);
+      if (input.name === field) input.setAttribute('aria-invalid', 'true');
+      else input.removeAttribute('aria-invalid');
     }
     if (field) purchaseFields.namedItem(field).focus();
   }
@@ -512,7 +520,7 @@ function mountAureliaPlanner() {
     $('#add-batch').focus();
   });
 
-  document.querySelectorAll('[data-budget]').forEach((button) => {
+  budgetButtons.forEach((button) => {
     button.addEventListener('click', () => {
       input.budget.value = integer.format(Number(button.dataset.budget));
       updateDraft();
