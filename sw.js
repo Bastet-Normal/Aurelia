@@ -2,10 +2,10 @@
 
 const scope = new URL(self.registration.scope);
 const cachePrefix = 'aurelia-shell-' + scope.pathname + '-';
-const cacheName = cachePrefix + 'v12';
+const cacheName = cachePrefix + 'v13';
 const shell = [
-  './index.html', './manifest.webmanifest', './styles.css?v=12', './market.js?v=12', './model.js?v=12',
-  './plans.js?v=12', './quotes.js?v=12', './planner.js?v=12', './app.js?v=12', './favicon.png', './icon-192.png', './icon-512.png',
+  './index.html', './manifest.webmanifest', './styles.css?v=13', './market.js?v=13', './model.js?v=13',
+  './plans.js?v=13', './quotes.js?v=13', './planner.js?v=13', './app.js?v=13', './favicon.png', './icon-192.png', './icon-512.png',
 ];
 const shellUrls = new Set(shell.map((asset) => new URL(asset, scope).href));
 const entry = new URL('./index.html', scope);

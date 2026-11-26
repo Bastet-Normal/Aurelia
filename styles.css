@@ -39,6 +39,7 @@ h1, h2, h3, p, dl, dd, figure, fieldset { margin: 0; }
 fieldset { min-width: 0; padding: 0; border: 0; }
 legend { padding: 0; }
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+::selection { background: var(--control-pressed); color: var(--deep); }
 h1:focus { outline: none; }
 h2 { font-size: 18px; font-weight: 630; line-height: 1.4; }
 .sr-only {
@@ -674,6 +675,8 @@ button:is(.text-button, .secondary-button):disabled { border-color: transparent;
 .form-field input[aria-invalid="true"], .budget-input:has(input[aria-invalid="true"]) { --field-edge: var(--field-error); }
 
 @media (forced-colors: active) {
+  ::selection { background: Highlight; color: HighlightText; }
+
   .form-field input:is(:focus, :focus-within), .budget-input:focus-within,
   :is(button, a:is(.primary-button, .outline-button, .text-button), .primary-nav a, .signal-actions a, summary):focus-visible,
   :is(.period-switch, .range-switch, .choice) input:focus-visible + span {
