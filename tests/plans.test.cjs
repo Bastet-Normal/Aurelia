@@ -2,10 +2,11 @@
 
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
-const { validate, estimate, encodeBackup, decodeBackup, mergeRecords, planCsv, priceComparison, planCalendar } = require('../plans.js');
+const { validate, estimate, validatePurchase, purchaseProgress, normalizeRecord, encodeBackup, decodeBackup,
+  mergeRecords, planCsv, priceComparison, planCalendar } = require('../plans.js');
 
 const input = { name: '黄金计划', start: '2026-12-20', budget: '￥１，００１', risk: 'active', horizon: 'short', fee: '2.50', price: '500' };
-const record = (overrides = {}) => ({ ...validate(input).value, id: 'plan-1', updatedAt: 100, ...overrides });
+const record = (overrides = {}) => normalizeRecord({ ...validate(input).value, id: 'plan-1', updatedAt: 100, ...overrides });
 
 test('normalized settings yield exact budget and dated fee/weight estimates', () => {
   const { value } = validate(input);
@@ -49,6 +50,36 @@ test('channel comparison includes buy charges and computes the gross recovery pr
   assert.equal(priceComparison('１０', { buy: '500' }).result.netSale, null);
   assert.equal(priceComparison('10', {}).result, null);
   assert.deepEqual(Object.keys(priceComparison('0', { buy: '0', sellRate: '100' }).errors), ['grams', 'buy', 'sellRate']);
+});
+
+test('planning carries over unit and percentage fees and charges the fixed fee once per batch', () => {
+  const { pricing } = priceComparison('10', { buy: '500', fixed: '50', buyRate: '2', sellRate: '5' });
+  assert.deepEqual(pricing, { price: 500, fee: 2, fixedFee: 50 });
+  const settings = validate({ ...input, ...pricing }).value;
+  const plan = estimate(settings);
+  assert.equal(plan.stages.reduce((sum, stage) => sum + stage.amount, 0), 1001);
+  assert(Math.abs(plan.grams * 500 + plan.fee - 1001) < 1e-10);
+  assert(Math.abs(plan.grams - (1001 - 3 * 50) / 1.02 / 500) < 1e-10);
+  assert(validate({ ...input, fixedFee: '200' }).errors.fixedFee);
+});
+
+test('old backups restore an empty purchase log and actual spending survives backup and CSV export', () => {
+  const older = { ...input, id: 'old-plan', updatedAt: 100 };
+  const [migrated] = decodeBackup(JSON.stringify({ format: 'aurelia.plans', version: 1, plans: [older] }));
+  assert.deepEqual(migrated.purchases, [null, null, null]);
+  assert.equal(migrated.fixedFee, 0);
+  const first = validatePurchase({ date: '2026-10-20', paid: '800.65', grams: '1.2345' }).value;
+  const third = validatePurchase({ date: '2026-10-21', paid: '250.37', grams: '0.5' }).value;
+  const saved = record({ purchases: [first, null, third] });
+  assert.deepEqual(decodeBackup(encodeBackup([saved])), [saved]);
+  const progress = purchaseProgress(saved.budget, saved.purchases);
+  assert.equal(progress.count, 2);
+  assert.equal(progress.spent, 1051.02);
+  assert.equal(progress.grams, 1.7345);
+  assert(Math.abs(progress.remaining + 50.02) < 1e-9);
+  assert.equal(progress.average, 1051.02 / 1.7345);
+  assert(planCsv(saved, estimate(saved)).includes('"2026-10-20","800.65","1.2345"'));
+  assert(validatePurchase({ date: '2026-02-30', paid: '0', grams: '1.23456' }).value === null);
 });
 
 test('iCalendar events use all-day dates, stable identifiers and UTF-8 line folds', () => {

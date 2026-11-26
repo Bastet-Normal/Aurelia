@@ -18,15 +18,15 @@ const absolutePercent = (value) => decimal.format(value) + '%';
 const showValue = (value, format) => Number.isFinite(value) ? format(value) : '—';
 
 const pages = {
-  overview: ['黄金市场总览', '查看国际金价、人民币克价及国内报价入口。'],
-  analysis: ['市场分析', '用美元或人民币查看历史区间，并对照样本外表现。'],
-  plan: ['购买计划', '比较渠道成本，拆分预算并安排复盘。'],
+  overview: ['黄金行情', '查看参考克价与走势，顺手比较实际渠道报价。'],
+  analysis: ['市场分析', '看看过去类似期限的价格变化，以及区间在历史上有多常命中。'],
+  compare: ['渠道比价', '比较到手成本，也可以估算回购后的差额。'],
+  plan: ['购买计划', '拆分预算、安排复盘，买入后记录真实花费。'],
 };
 
 function route(focusHeading) {
-  const requested = location.hash.slice(2);
-  const compare = requested === 'plan/compare';
-  const page = compare ? 'plan' : location.hash.startsWith('#/') && Object.hasOwn(pages, requested) ? requested : 'overview';
+  const requested = location.hash === '#/plan/compare' ? 'compare' : location.hash.slice(2);
+  const page = location.hash.startsWith('#/') && Object.hasOwn(pages, requested) ? requested : 'overview';
   const [title, description] = pages[page];
 
   all('[data-page]').forEach((section) => { section.hidden = section.dataset.page !== page; });
@@ -40,10 +40,7 @@ function route(focusHeading) {
   if (page === 'overview') spotChart.redraw();
   if (page === 'analysis') forecastChart.redraw();
 
-  if (compare) {
-    $('#compare-title').focus({ preventScroll: true });
-    $('#quote-compare').scrollIntoView({ block: 'start' });
-  } else if (focusHeading) {
+  if (focusHeading) {
     $('#page-title').focus({ preventScroll: true });
     window.scrollTo(0, 0);
   }
@@ -311,26 +308,29 @@ function renderScenario(state) {
     : historyError ? '暂时无法获取所选币种的历史数据。可切换币种或返回总览刷新。' : '正在读取历史数据。');
 
   const validation = result?.validation;
+  $('#validation-headline').hidden = !validation;
   $('#validation-metrics').hidden = !validation;
   $('#validation-reading').hidden = !validation;
   $('#validation-empty').hidden = Boolean(validation);
   setText('#validation-empty', rows.length ? '现有历史数据不足以生成样本外结果。' : '历史数据就绪后显示结果。');
   if (!result) return;
   const { anchor, low, median, high } = result;
-  setText('#scenario-unit', '历史中位情景 · ' + (isCny ? '人民币 / 克' : '美元 / 盎司'));
+  setText('#scenario-unit', '历史中间水平 · ' + (isCny ? '人民币 / 克' : '美元 / 盎司'));
   setText('#forecast-value', format(median));
   setText('#forecast-range', format(low) + ' – ' + format(high));
   setText('#forecast-change', '较参考价 ' + percent(percentChange(median, anchor.price)));
+  setText('#scenario-reading', '以 ' + format(anchor.price) + ' 为起点，套用过去 ' + period + ' 个观测日的涨跌幅。区间只描述期末，实际价格可能超出。');
   if (validation) {
     setText('#validation-period', validation.startDate + ' 至 ' + validation.endDate);
     setText('#validation-coverage', absolutePercent(validation.coverage));
     setText('#validation-mape', absolutePercent(validation.mape));
     setText('#validation-baseline', absolutePercent(validation.baselineMape));
-    setText('#validation-count', String(validation.samples));
+    const hits = Math.round(validation.coverage * validation.samples / 100);
+    setText('#validation-count', validation.samples + ' 次历史检验中，' + hits + ' 次落在当时的区间内。');
     const modelError = decimal.format(validation.mape);
     const flatError = decimal.format(validation.baselineMape);
-    setText('#validation-reading', modelError === flatError ? '按两位小数显示，中位情景与持平基准的误差相同。'
-      : '历史检验中，中位情景的误差' + (validation.mape < validation.baselineMape ? '低于' : '高于') + '持平基准。');
+    setText('#validation-reading', modelError === flatError ? '按两位小数显示，中位情景与假设价格持平的误差相同。'
+      : '中位情景的历史误差' + (validation.mape < validation.baselineMape ? '低于' : '高于') + '假设价格持平时的误差。');
   }
 
   const series = rows.slice(-31);

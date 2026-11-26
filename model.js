@@ -4,9 +4,9 @@ const aureliaModel = (() => {
   const minimumBudget = 1000;
   const defaultPlan = Object.freeze({ budget: 100000, horizon: 'mid', risk: 'steady' });
   const risks = Object.freeze({
-    steady: { title: '稳健配置', weights: [30, 35, 35], description: '把更多预算留给后两批。' },
-    balanced: { title: '平衡配置', weights: [40, 35, 25], description: '在首批投入与后续预留之间取得平衡。' },
-    active: { title: '积极配置', weights: [50, 30, 20], description: '提高首批投入，减少后续预留。' },
+    steady: { title: '首批三成', weights: [30, 35, 35], description: '把更多预算留给后两批。' },
+    balanced: { title: '首批四成', weights: [40, 35, 25], description: '首批安排四成预算，剩余分两次复盘。' },
+    active: { title: '首批一半', weights: [50, 30, 20], description: '把一半预算安排在首批。' },
   });
   const horizons = Object.freeze({
     short: { title: '3–6 个月', days: [0, 21, 45] },

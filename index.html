@@ -6,19 +6,19 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://api.gold-api.com https://api.frankfurter.dev blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="referrer" content="no-referrer">
   <meta name="theme-color" content="#f8f6f0">
-  <meta name="description" content="查看人民币克价与国际金价，比较历史情景和渠道成本，管理黄金分批预算。">
+  <meta name="description" content="看人民币克价、比渠道报价、安排分批预算并记录实际购买。">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <title>黄金市场总览 · Aurelia</title>
+  <title>黄金行情 · Aurelia</title>
   <link rel="icon" href="favicon.png" type="image/png">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=8">
-  <script src="market.js?v=8" defer></script>
-  <script src="model.js?v=8" defer></script>
-  <script src="plans.js?v=8" defer></script>
-  <script src="planner.js?v=8" defer></script>
-  <script src="app.js?v=8" defer></script>
+  <link rel="stylesheet" href="styles.css?v=9">
+  <script src="market.js?v=9" defer></script>
+  <script src="model.js?v=9" defer></script>
+  <script src="plans.js?v=9" defer></script>
+  <script src="planner.js?v=9" defer></script>
+  <script src="app.js?v=9" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#page-title">跳到主要内容</a>
@@ -28,9 +28,10 @@
         <span class="brand-mark" aria-hidden="true">A</span><span>Aurelia</span>
       </a>
       <nav class="primary-nav" aria-label="主导航">
-        <a href="#/overview" aria-current="page">市场总览</a>
-        <a href="#/analysis">市场分析</a>
-        <a href="#/plan">购买计划</a>
+        <a href="#/overview" aria-current="page">行情</a>
+        <a href="#/analysis">分析</a>
+        <a href="#/compare">比价</a>
+        <a href="#/plan">计划</a>
       </nav>
       <span class="market-status" id="market-status" role="status"><i aria-hidden="true"></i><span>正在读取行情</span></span>
     </div>
@@ -38,8 +39,8 @@
 
   <main class="shell main-content" id="main">
     <header class="page-header">
-      <h1 id="page-title" tabindex="-1">黄金市场总览</h1>
-      <p id="page-description">查看现货参考价、人民币换算与近期走势。</p>
+      <h1 id="page-title" tabindex="-1">黄金行情</h1>
+      <p id="page-description">查看参考克价与走势，顺手比较实际渠道报价。</p>
     </header>
 
     <noscript><p class="notice">请启用 JavaScript 以查看行情和管理计划。</p></noscript>
@@ -50,9 +51,9 @@
           <div class="quote-heading">
             <div class="quote-price-group">
               <div>
-                <h2>人民币换算参考</h2>
+                <h2>人民币参考克价</h2>
                 <div class="quote-value numeric" id="spot-cny">—</div>
-                <span class="unit">人民币 / 克</span>
+                <span class="unit">元 / 克 · 国际金价换算</span>
               </div>
               <div class="secondary-quote">
                 <h3 id="quote-title">国际黄金参考价</h3>
@@ -60,14 +61,15 @@
                 <span class="unit">美元 / 金衡盎司</span>
               </div>
             </div>
-            <button type="button" class="outline-button refresh-button" id="market-refresh">刷新行情</button>
           </div>
-          <p class="source-line" id="quote-source">正在读取现货报价与日度数据。</p>
-          <dl class="quote-metrics">
-            <div><dt>最新美元日度参考</dt><dd id="reference-close">—</dd></div>
-            <div><dt>美元日度涨跌</dt><dd id="reference-change">—</dd></div>
-          </dl>
-          <p class="source-line" id="fx-source">人民币换算使用 ECB 日度参考汇率。</p>
+          <div class="quote-source-row">
+            <p class="source-line" id="quote-source">正在读取现货报价与日度数据。</p>
+            <button type="button" class="text-button refresh-button" id="market-refresh">刷新行情</button>
+          </div>
+          <div class="quote-actions">
+            <a class="primary-button" href="#/compare">比渠道报价</a>
+            <a class="outline-button" href="#/plan">做分批计划</a>
+          </div>
           <figure class="chart-figure" id="spot-figure" hidden>
             <figcaption class="chart-title">日度走势 <span id="spot-range-label"></span></figcaption>
             <div class="chart-toolbar">
@@ -97,8 +99,16 @@
             </div>
           </figure>
           <p class="empty-panel" id="quote-chart-empty">正在读取近期走势。</p>
-          <p class="field-hint" role="status" id="data-freshness"></p>
           <p class="field-hint" role="status" id="refresh-status"></p>
+          <details class="market-details method-note">
+            <summary>价格口径与汇率</summary>
+            <dl class="quote-metrics">
+              <div><dt>最新美元日度参考</dt><dd id="reference-close">—</dd></div>
+              <div><dt>美元日度涨跌</dt><dd id="reference-change">—</dd></div>
+            </dl>
+            <p class="source-line" id="fx-source">人民币换算使用 ECB 日度参考汇率。</p>
+            <p class="field-hint" id="data-freshness"></p>
+          </details>
         </article>
 
         <article class="card signal-card">
@@ -118,7 +128,6 @@
           <p>上海金基准价按人民币每克公布。金条、金饰及银行积存金的买入与回购，以渠道当时报价和费用为准。</p>
           <div class="domestic-actions">
             <a class="outline-button" href="https://www.sge.com.cn/sjzx/jzj">查看上海金基准价</a>
-            <a class="outline-button" href="#/plan/compare">比较渠道成本</a>
           </div>
         </article>
       </div>
@@ -129,7 +138,7 @@
       <div class="analysis-grid">
         <article class="card outlook-card">
           <div class="outlook-heading">
-            <h2>历史分位情景</h2>
+            <h2>同期限的历史价格区间</h2>
             <fieldset class="period-switch" id="period-switch">
               <legend class="sr-only">情景期限，按观测日</legend>
               <label><input type="radio" name="period" value="5"><span>5 日</span></label>
@@ -141,20 +150,21 @@
             <p class="source-line" id="analysis-source">基于波兰央行日度参考价，按观测日计算。</p>
             <fieldset class="range-switch" id="analysis-currency-switch">
               <legend class="sr-only">历史情景计价单位</legend>
-              <label><input type="radio" name="analysis-currency" value="usd" checked><span>美元 / 盎司</span></label>
-              <label><input type="radio" name="analysis-currency" value="cny"><span>人民币 / 克</span></label>
+              <label><input type="radio" name="analysis-currency" value="usd"><span>美元 / 盎司</span></label>
+              <label><input type="radio" name="analysis-currency" value="cny" checked><span>人民币 / 克</span></label>
             </fieldset>
           </div>
           <p class="empty-panel" id="analysis-empty">正在读取历史数据。</p>
           <div id="analysis-result" hidden>
             <div class="outlook-summary" role="status">
-              <div><div class="outlook-price numeric" id="forecast-value">—</div><span class="unit" id="scenario-unit">历史中位情景 · 美元 / 盎司</span></div>
+              <div><div class="outlook-price numeric" id="forecast-value">—</div><span class="unit" id="scenario-unit">历史中间水平 · 人民币 / 克</span></div>
               <div class="outlook-range">
-                <span>10–90 分位区间</span>
+                <span>历史中间 80% 的区间</span>
                 <strong id="forecast-range">—</strong>
                 <span id="forecast-change">—</span>
               </div>
             </div>
+            <p class="analysis-reading" id="scenario-reading"></p>
             <figure class="chart-figure">
               <figcaption class="sr-only">历史日度参考价与情景区间</figcaption>
               <div class="plot forecast-plot">
@@ -163,8 +173,8 @@
               </div>
               <ul class="chart-legend" aria-label="图例">
                 <li><i class="legend-line" aria-hidden="true"></i>日度参考价</li>
-                <li><i class="legend-projection" aria-hidden="true"></i>中位情景</li>
-                <li><i class="legend-band" aria-hidden="true"></i>历史分位区间</li>
+                <li><i class="legend-projection" aria-hidden="true"></i>历史中间水平</li>
+                <li><i class="legend-band" aria-hidden="true"></i>历史中间区间</li>
               </ul>
               <details class="chart-data">
                 <summary>查看情景图表数据</summary>
@@ -175,18 +185,20 @@
         </article>
 
         <article class="card breakdown-card">
-          <h2>样本外检验</h2>
+          <h2>过去表现如何</h2>
           <p class="source-line" id="validation-period">按所选观测日数滚动检验。</p>
           <p class="empty-panel" id="validation-empty">历史数据就绪后显示结果。</p>
-          <dl class="validation-metrics" id="validation-metrics" hidden>
-            <div><dt>区间实现覆盖率</dt><dd id="validation-coverage">—</dd></div>
-            <div><dt>中位情景平均绝对百分比误差</dt><dd id="validation-mape">—</dd></div>
-            <div><dt>持平基准平均绝对百分比误差</dt><dd id="validation-baseline">—</dd></div>
-            <div><dt>非重叠检验样本</dt><dd id="validation-count">—</dd></div>
-          </dl>
+          <div class="validation-headline" id="validation-headline" hidden>
+            <strong class="numeric" id="validation-coverage">—</strong>
+            <span id="validation-count"></span>
+          </div>
           <p class="analysis-reading" id="validation-reading" hidden></p>
           <details class="method-note">
-            <summary>查看计算方法</summary>
+            <summary>查看误差与计算方法</summary>
+            <dl class="validation-metrics" id="validation-metrics" hidden>
+              <div><dt>中位情景平均误差</dt><dd id="validation-mape">—</dd></div>
+              <div><dt>假设价格持平的平均误差</dt><dd id="validation-baseline">—</dd></div>
+            </dl>
             <p>取最近 252 个同期限历史收益，计算第 10、50、90 分位，并应用于所选币种的最新日度参考价。人民币序列使用金价与汇率同日可配对的观测日。检验在每个历史起点使用该日及更早的数据，以起点价格持平作为基准。</p>
           </details>
         </article>
@@ -205,43 +217,61 @@
     </section>
 
     <section class="view" data-page="plan" aria-labelledby="page-title" hidden>
+      <div class="plan-overview" id="plan-overview" hidden>
+        <div><strong id="plan-overview-name"></strong><p id="plan-overview-summary"></p></div>
+        <div class="plan-overview-actions">
+          <button type="button" class="outline-button" id="jump-to-progress">查看购买进度</button>
+          <button type="button" class="text-button" id="jump-to-library">已保存的计划</button>
+        </div>
+      </div>
       <div class="plan-grid">
         <form class="card plan-form" id="plan-form" novalidate>
-          <div class="title-row result-heading"><h2>计划设置</h2><button class="outline-button" id="new-plan" type="button">新建计划</button></div>
+          <div class="title-row result-heading"><h2>分批预算</h2><button class="outline-button" id="new-plan" type="button">新建计划</button></div>
+          <p class="quote-transfer" id="quote-transfer" role="status" hidden></p>
+          <div class="budget-field">
+            <label for="budget">计划预算</label>
+            <div class="budget-input">
+              <span aria-hidden="true">¥</span>
+              <input id="budget" name="budget" type="text" inputmode="numeric" placeholder="输入金额" required autocomplete="off" aria-describedby="budget-hint">
+              <span aria-hidden="true">人民币</span>
+            </div>
+            <div class="budget-presets" role="group" aria-label="预算快捷金额">
+              <button type="button" class="preset-button" data-budget="1000">¥1,000</button>
+              <button type="button" class="preset-button" data-budget="5000">¥5,000</button>
+              <button type="button" class="preset-button" data-budget="10000">¥1 万</button>
+              <button type="button" class="preset-button" data-budget="50000">¥5 万</button>
+            </div>
+            <p class="field-hint" id="budget-hint">输入 ¥1,000 及以上的整数金额。</p>
+            <dl class="quick-preview" id="quick-preview" aria-label="分批预算速览" hidden>
+              <div><dt>首批</dt><dd id="preview-first">—</dd></div>
+              <div><dt>第二批</dt><dd id="preview-second">—</dd></div>
+              <div><dt>第三批</dt><dd id="preview-third">—</dd></div>
+            </dl>
+          </div>
+          <fieldset class="plan-field">
+            <legend>分批比例</legend>
+            <div class="choices" id="risk-choices"></div>
+          </fieldset>
           <div class="form-fields">
             <label class="form-field" for="plan-name"><span>计划名称</span><input id="plan-name" name="name" maxlength="60" required></label>
             <label class="form-field" for="plan-start"><span>起始日期</span><input id="plan-start" name="start" type="date" min="1900-01-01" max="9998-12-31" required></label>
-          </div>
-          <div class="budget-field">
-            <label for="budget">计划预算</label>
-            <div class="budget-presets" role="group" aria-label="预算快捷金额">
-              <button type="button" class="preset-button" data-budget="10000">¥1 万</button>
-              <button type="button" class="preset-button" data-budget="50000">¥5 万</button>
-              <button type="button" class="preset-button" data-budget="100000">¥10 万</button>
-            </div>
-            <div class="budget-input">
-              <span aria-hidden="true">¥</span>
-              <input id="budget" name="budget" type="text" inputmode="numeric" value="100,000" required autocomplete="off" aria-describedby="budget-hint plan-error">
-              <span aria-hidden="true">CNY</span>
-            </div>
-            <p class="field-hint" id="budget-hint">最低 ¥1,000，按整元拆分且三批合计等于预算。</p>
           </div>
           <fieldset class="plan-field">
             <legend>持有周期</legend>
             <div class="choices" id="horizon-choices"></div>
           </fieldset>
-          <fieldset class="plan-field">
-            <legend>分批比例</legend>
-            <div class="choices" id="risk-choices"></div>
-          </fieldset>
-          <fieldset class="plan-field estimate-fields">
-            <legend>金重与费用估算 <small>选填</small></legend>
+          <details class="plan-field estimate-fields method-note" id="plan-estimate-fields">
+            <summary>按报价估算克数与费用 <small>选填</small></summary>
             <div class="form-fields">
-              <label class="form-field" for="plan-price"><span>拟购单价（¥/克）</span><input id="plan-price" name="price" inputmode="decimal" placeholder="输入报价"></label>
-              <label class="form-field" for="plan-fee"><span>额外费率（%）</span><input id="plan-fee" name="fee" inputmode="decimal" placeholder="0"></label>
+              <label class="form-field" for="plan-price"><span>买入单价（¥/克）</span><input id="plan-price" name="price" inputmode="decimal" placeholder="输入报价"></label>
+              <label class="form-field" for="plan-fee"><span>买入费率（%）</span><input id="plan-fee" name="fee" inputmode="decimal" placeholder="0"></label>
+              <label class="form-field" for="plan-fixed-fee"><span>每批固定费用（¥）</span><input id="plan-fixed-fee" name="fixedFee" inputmode="decimal" placeholder="0"></label>
             </div>
-            <button class="text-button" id="use-reference" type="button" disabled>填入市场参考价</button>
-          </fieldset>
+            <div class="estimate-actions">
+              <button class="text-button" id="use-reference" type="button" disabled>填入市场参考价</button>
+              <a class="text-button" href="#/compare">去比报价</a>
+            </div>
+          </details>
           <p class="field-error" id="plan-error" role="alert" hidden></p>
           <div class="plan-actions">
             <button type="submit" class="primary-button">保存计划</button>
@@ -252,21 +282,34 @@
         </form>
 
         <article class="card plan-result" id="plan-result" aria-labelledby="result-title">
-          <div class="title-row result-heading"><h2 id="result-title" tabindex="-1">分批方案</h2><span class="subtle-tag" id="plan-profile">—</span></div>
-          <div class="result-total"><span>总预算</span><strong class="numeric" id="plan-total">—</strong></div>
-          <div class="allocation-bar" id="allocation-bar" aria-hidden="true"></div>
-          <p class="result-description" id="plan-description">—</p>
-          <dl class="estimate-summary" id="estimate-summary" hidden>
-            <div><dt>预估总克数</dt><dd id="plan-grams">—</dd></div>
-            <div><dt>预估费用</dt><dd id="plan-fees">—</dd></div>
-          </dl>
-          <ol class="plan-stages" id="plan-stages"></ol>
+          <div class="title-row result-heading"><h2 id="result-title" tabindex="-1">分批方案</h2><span class="subtle-tag" id="plan-profile" hidden></span></div>
+          <p class="empty-panel" id="plan-result-empty">输入预算后即可查看三批安排。</p>
+          <div id="plan-result-content" hidden>
+            <div class="result-total"><span>总预算</span><strong class="numeric" id="plan-total">—</strong></div>
+            <div class="allocation-bar" id="allocation-bar" aria-hidden="true"></div>
+            <p class="result-description" id="plan-description"></p>
+            <dl class="estimate-summary" id="estimate-summary" hidden>
+              <div><dt>预估总克数</dt><dd id="plan-grams">—</dd></div>
+              <div><dt>预估费用</dt><dd id="plan-fees">—</dd></div>
+            </dl>
+            <section class="plan-progress" id="plan-progress" aria-labelledby="progress-title" hidden>
+              <div class="title-row result-heading"><h3 id="progress-title">购买进度</h3><span id="purchase-count"></span></div>
+              <dl class="progress-metrics">
+                <div><dt>实际支付</dt><dd id="purchase-spent">—</dd></div>
+                <div><dt>累计克数</dt><dd id="purchase-grams">—</dd></div>
+                <div><dt id="purchase-balance-label">剩余预算</dt><dd id="purchase-balance">—</dd></div>
+                <div><dt>实际平均克价</dt><dd id="purchase-average">—</dd></div>
+              </dl>
+            </section>
+            <ol class="plan-stages" id="plan-stages"></ol>
+            <p class="field-hint" id="purchase-status" role="status"></p>
+          </div>
         </article>
       </div>
 
       <section class="card library-card" aria-labelledby="library-title">
         <div class="title-row result-heading library-heading">
-          <h2 id="library-title">已保存的计划</h2>
+          <h2 id="library-title" tabindex="-1">已保存的计划</h2>
           <div class="library-actions">
             <button class="outline-button" id="backup-plans" type="button">下载备份</button>
             <button class="outline-button" id="import-plans" type="button">导入备份</button>
@@ -278,15 +321,18 @@
         <p class="empty-panel" id="library-empty">已保存的方案会出现在这里。</p>
         <ul id="saved-plans" class="saved-plans"></ul>
       </section>
+      <aside class="notice">分批预算包含表单里填写的买入费用。后两批日期用于复盘，可导入日历。</aside>
+    </section>
+
+    <section class="view" data-page="compare" aria-labelledby="page-title" hidden>
       <section class="card comparison-card" id="quote-compare" aria-labelledby="compare-title">
         <header class="comparison-header">
-          <div><h2 id="compare-title" tabindex="-1">渠道报价比较</h2><p>按同等纯度、同一克重比较。报价已含的工费或手续费无需重复填入。</p></div>
+          <div><h2 id="compare-title">同一克重，到手多少钱？</h2><p>录入渠道实际报价。请比较同等纯度，已计入单价的工费无需再填。</p></div>
           <label class="form-field" for="compare-grams"><span>比较克重（克）</span><input id="compare-grams" name="grams" inputmode="decimal" value="10" form="comparison-form"></label>
         </header>
         <form id="comparison-form" novalidate></form>
         <p class="comparison-summary" id="comparison-summary" role="status"></p>
       </section>
-      <aside class="notice">分批方案的费率按黄金净价计算，费用计入预算。导出的日历可导入系统日历，后两批日期用于复盘。</aside>
     </section>
 
     <footer class="footer">
@@ -298,5 +344,20 @@
       </div>
     </footer>
   </main>
+  <dialog class="purchase-dialog" id="purchase-dialog" aria-labelledby="purchase-title">
+    <form id="purchase-form" novalidate>
+      <h2 id="purchase-title" tabindex="-1">记录实际买入</h2>
+      <p class="field-hint" id="purchase-context"></p>
+      <label class="form-field"><span>买入日期</span><input type="date" name="date" min="1900-01-01" max="9998-12-31" required></label>
+      <label class="form-field"><span>实付金额（¥，含费用）</span><input name="paid" inputmode="decimal" required></label>
+      <label class="form-field"><span>实际买入克数</span><input name="grams" inputmode="decimal" required></label>
+      <p class="field-error" id="purchase-error" role="alert" hidden></p>
+      <div class="purchase-actions">
+        <button type="submit" class="primary-button">保存买入记录</button>
+        <button type="button" class="outline-button" id="purchase-cancel">取消</button>
+        <button type="button" class="text-button remove-plan" id="purchase-remove" hidden>删除记录</button>
+      </div>
+    </form>
+  </dialog>
 </body>
 </html>
