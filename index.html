@@ -1,49 +1,302 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Aurelia · 黄金决策</title>
-  <meta name="description" content="Aurelia 黄金市场分析与购买决策工具" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Noto+Serif+SC:wght@500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=views-2" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://api.gold-api.com https://api.frankfurter.dev blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#f8f6f0">
+  <meta name="description" content="查看人民币克价与国际金价，比较历史情景和渠道成本，管理黄金分批预算。">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>黄金市场总览 · Aurelia</title>
+  <link rel="icon" href="favicon.png" type="image/png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="stylesheet" href="styles.css?v=8">
+  <script src="market.js?v=8" defer></script>
+  <script src="model.js?v=8" defer></script>
+  <script src="plans.js?v=8" defer></script>
+  <script src="planner.js?v=8" defer></script>
+  <script src="app.js?v=8" defer></script>
 </head>
 <body>
-  <div class="app-shell">
-    <a class="skip-link" href="#page-title">跳到主要内容</a>
-    <header class="site-header"><a class="brand" href="#/overview" aria-label="Aurelia 首页"><span class="brand-mark">A</span><span><span class="brand-name">Aurelia</span><span class="brand-sub">GOLD INTELLIGENCE</span></span></a><nav class="primary-nav" aria-label="主导航"><a href="#/overview" aria-current="page">总览</a><a href="#/analysis">市场分析</a><a href="#/plan">购买计划</a></nav><span class="demo-badge">演示工作台</span></header>
-    <main class="main-content" id="main"><header class="topbar"><div><div class="eyebrow" id="today-label"></div><h1 id="page-title" tabindex="-1">把握方向，从容决策</h1><p id="page-description" class="page-description">先看行情与核心判断，再决定是否深入分析或制定计划。</p></div><span class="data-status">示例快照 · 非实时行情</span></header><section data-page="overview" aria-labelledby="page-title">
-      <section class="hero-grid">
-        <article class="signal-card card"><div class="card-head"><div><div class="eyebrow">AURELIA MARKET SIGNAL</div><h2>谨慎积累阶段</h2></div><span class="status-pill"><i></i> 偏强</span></div><p class="signal-copy">宏观环境仍为黄金提供支撑，但短线涨幅已较为充分。建议保持节奏，等待更好的配置窗口。</p><div class="signal-metrics"><div><span>趋势倾向</span><b>看涨</b></div><div><span>短线风险</span><b class="yellow">中等</b></div><div><span>信号置信度</span><b id="confidence-value">82%</b></div></div><div class="signal-footer"><span>综合 7 项核心因子</span><button class="text-btn" id="recalculate">重新计算 <span>↻</span></button></div></article>
-        <article class="price-card card"><div class="card-head"><div><div class="eyebrow">SPOT GOLD · XAU/USD</div><h2 class="price">$2,684.70</h2></div><span class="change up">+0.84%</span></div><div class="price-meta"><span>≈ ¥613 / 克 <small>按 7.10 汇率</small></span><span>今日最高 <b>$2,691.20</b></span></div><div class="sparkline"><svg viewBox="0 0 600 150" preserveAspectRatio="none" aria-label="金价走势"><defs><linearGradient id="fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#d3a84c" stop-opacity=".25"/><stop offset="1" stop-color="#d3a84c" stop-opacity="0"/></linearGradient></defs><path class="area" d="M0,122 C24,112 34,119 53,104 S85,112 103,92 S129,98 148,76 S170,82 188,88 S214,68 238,78 S264,54 282,61 S303,79 326,68 S348,70 365,50 S387,57 406,42 S425,55 448,39 S473,51 493,25 S520,32 538,18 S562,32 600,8 L600,150 L0,150Z"/><path class="line" d="M0,122 C24,112 34,119 53,104 S85,112 103,92 S129,98 148,76 S170,82 188,88 S214,68 238,78 S264,54 282,61 S303,79 326,68 S348,70 365,50 S387,57 406,42 S425,55 448,39 S473,51 493,25 S520,32 538,18 S562,32 600,8"/></svg><div class="chart-labels"><span>09:00</span><span>12:00</span><span>15:00</span><span>18:00</span><span>21:00</span></div></div></article>
-      </section>
-      <div class="overview-next"><a class="destination-card" href="#/analysis"><span class="eyebrow">01 / UNDERSTAND</span><h2>判断背后，有哪些依据？</h2><p>将价格展望与影响因子放在一起，理解判断的来源与局限。</p><span class="destination-action">进入市场分析 ↗</span></a><a class="destination-card" href="#/plan"><span class="eyebrow">02 / PLAN</span><h2>把预算，安排得更从容。</h2><p>单独编辑分批比例与投入节奏，不被行情图表打断。</p><span class="destination-action">制定购买计划 ↗</span></a></div></section><section data-page="analysis" aria-labelledby="page-title" hidden><div class="context-strip"><span>当前示例金价 <b>$2,684.70 / 金衡盎司</b></span><a href="#/plan">去制定计划 →</a></div><section class="section-heading"><div><div class="eyebrow">MARKET PULSE</div><h3>影响因子</h3></div><span class="plan-note">同一组演示快照</span></section>
-      <section class="pulse-grid" id="pulse">
-        <article class="metric-card card"><div class="metric-top"><span>美元指数 DXY</span><span class="change down">−0.18%</span></div><b>101.42</b><div class="tiny-chart red"><svg viewBox="0 0 180 40" preserveAspectRatio="none"><path d="M0,13 C20,8 27,21 45,16 S70,30 88,21 S111,28 130,18 S154,24 180,8"/></svg></div><small>美元走弱，利好黄金</small></article>
-        <article class="metric-card card"><div class="metric-top"><span>美国实际利率</span><span class="change down">−3.2 bps</span></div><b>1.68%</b><div class="tiny-chart red"><svg viewBox="0 0 180 40" preserveAspectRatio="none"><path d="M0,10 C24,18 32,10 50,22 S70,17 89,30 S116,20 134,26 S160,17 180,34"/></svg></div><small>实际利率回落，支撑金价</small></article>
-        <article class="metric-card card"><div class="metric-top"><span>ETF 持仓变化</span><span class="change up">+12.4 吨</span></div><b>2,714.6 <small>t</small></b><div class="tiny-chart"><svg viewBox="0 0 180 40" preserveAspectRatio="none"><path d="M0,31 C20,32 34,24 49,26 S71,14 90,18 S111,8 130,15 S158,5 180,7"/></svg></div><small>机构资金持续流入</small></article>
-        <article class="metric-card card"><div class="metric-top"><span>市场波动率 GVZ</span><span class="change up">+0.6</span></div><b>18.72</b><div class="tiny-chart"><svg viewBox="0 0 180 40" preserveAspectRatio="none"><path d="M0,34 C23,30 31,32 50,24 S71,29 91,17 S114,23 135,12 S162,19 180,5"/></svg></div><small>波动温和，风险可控</small></article>
-      </section>
-      <section class="lower-grid">
-        <article class="forecast-card card" id="forecast"><div class="section-heading compact"><div><div class="eyebrow">PRICE OUTLOOK</div><h3>未来价格展望</h3></div><button class="range-select">30 天 <span>⌄</span></button></div><div class="forecast-main"><div class="forecast-number" id="forecast-value">$2,730 <span>预期中位</span></div><div class="forecast-badge" id="forecast-change">+1.69%<small>较当前价格</small></div></div><div class="forecast-chart"><svg viewBox="0 0 680 190" preserveAspectRatio="none"><path class="gridline" d="M0,36H680 M0,90H680 M0,144H680"/><path class="confidence" d="M390,87 C445,72 500,98 553,58 S625,72 680,34 L680,122 C620,136 588,113 540,130 S455,118 390,120Z"/><path class="actual" d="M0,138 C31,129 53,144 79,122 S121,137 150,114 S188,118 219,101 S254,115 285,90 S320,111 355,90 S378,97 390,87"/><path class="projection" d="M390,87 C445,72 500,98 553,58 S625,72 680,34"/></svg><div class="axis"><span>−30 日</span><span>−15 日</span><span>今日</span><span>+15 日</span><span>+30 日</span></div></div><div class="legend"><span><i class="dot gold"></i>实际价格</span><span><i class="dot dashed"></i>预测中位</span><span><i class="dot band"></i>置信区间</span></div></article>
-        <article class="allocation-card card"><div class="section-heading compact"><div><div class="eyebrow">SIGNAL BREAKDOWN</div><h3>信号构成</h3></div><button class="text-btn">详情 →</button></div><div class="donut-wrap"><div class="donut"><div><b>82</b><span>综合评分</span></div></div><div class="breakdown"><div><span><i class="dot gold"></i>宏观环境</span><b>+24</b></div><div><span><i class="dot brown"></i>技术趋势</span><b>+21</b></div><div><span><i class="dot sand"></i>资金流向</span><b>+19</b></div><div><span><i class="dot pale"></i>避险情绪</span><b>+18</b></div></div></div><div class="recommendation" id="recommendation"><span class="rec-icon">✦</span><div><b>当前策略建议</b><p>适合分批配置，不宜追高</p></div><span class="arrow">→</span></div></article>
-      </section>
-      <aside class="validation-note"><h2>预测验证状态</h2><p>以上价格、评分及图形均为界面示例，未经过模型校准，不能当作上涨概率或投资依据。尚未接入真实历史数据，暂无回测结果。</p></aside></section><section data-page="plan" aria-labelledby="page-title" hidden><div class="context-strip"><span>独立规划预算 · 不会提交交易</span><a href="#/analysis">回看市场分析 →</a></div>
-      <section class="plan-card card" id="plan">
-        <div class="section-heading compact"><div><div class="eyebrow">ACCUMULATION PLAN</div><h3>制定你的黄金计划</h3></div><span class="plan-note">仅供模拟参考</span></div>
-        <div class="plan-form">
-          <label>计划预算 <div class="input-wrap"><span>¥</span><input id="budget" type="number" min="1000" step="1000" value="100000" /></div></label>
-          <label>持有周期 <select id="horizon"><option value="short">3–6 个月</option><option value="mid" selected>1–3 年</option><option value="long">3 年以上</option></select></label>
-          <label>风险偏好 <select id="risk"><option value="steady" selected>稳健配置</option><option value="balanced">平衡增长</option><option value="active">积极择时</option></select></label>
-          <button class="plan-button" id="plan-button">生成计划 <span>→</span></button>
+  <a class="skip-link" href="#page-title">跳到主要内容</a>
+  <header class="site-header">
+    <div class="shell header-inner">
+      <a class="brand" href="#/overview" aria-label="Aurelia 首页">
+        <span class="brand-mark" aria-hidden="true">A</span><span>Aurelia</span>
+      </a>
+      <nav class="primary-nav" aria-label="主导航">
+        <a href="#/overview" aria-current="page">市场总览</a>
+        <a href="#/analysis">市场分析</a>
+        <a href="#/plan">购买计划</a>
+      </nav>
+      <span class="market-status" id="market-status" role="status"><i aria-hidden="true"></i><span>正在读取行情</span></span>
+    </div>
+  </header>
+
+  <main class="shell main-content" id="main">
+    <header class="page-header">
+      <h1 id="page-title" tabindex="-1">黄金市场总览</h1>
+      <p id="page-description">查看现货参考价、人民币换算与近期走势。</p>
+    </header>
+
+    <noscript><p class="notice">请启用 JavaScript 以查看行情和管理计划。</p></noscript>
+
+    <section class="view" data-page="overview" aria-labelledby="page-title">
+      <div class="overview-grid">
+        <article class="card quote-card">
+          <div class="quote-heading">
+            <div class="quote-price-group">
+              <div>
+                <h2>人民币换算参考</h2>
+                <div class="quote-value numeric" id="spot-cny">—</div>
+                <span class="unit">人民币 / 克</span>
+              </div>
+              <div class="secondary-quote">
+                <h3 id="quote-title">国际黄金参考价</h3>
+                <div class="numeric secondary-quote-value" id="spot">—</div>
+                <span class="unit">美元 / 金衡盎司</span>
+              </div>
+            </div>
+            <button type="button" class="outline-button refresh-button" id="market-refresh">刷新行情</button>
+          </div>
+          <p class="source-line" id="quote-source">正在读取现货报价与日度数据。</p>
+          <dl class="quote-metrics">
+            <div><dt>最新美元日度参考</dt><dd id="reference-close">—</dd></div>
+            <div><dt>美元日度涨跌</dt><dd id="reference-change">—</dd></div>
+          </dl>
+          <p class="source-line" id="fx-source">人民币换算使用 ECB 日度参考汇率。</p>
+          <figure class="chart-figure" id="spot-figure" hidden>
+            <figcaption class="chart-title">日度走势 <span id="spot-range-label"></span></figcaption>
+            <div class="chart-toolbar">
+              <fieldset class="range-switch" id="spot-currency-switch">
+                <legend class="sr-only">走势图计价单位</legend>
+                <label><input type="radio" name="spot-currency" value="usd"><span>美元 / 盎司</span></label>
+                <label><input type="radio" name="spot-currency" value="cny" checked><span>人民币 / 克</span></label>
+              </fieldset>
+              <fieldset class="range-switch" id="spot-range-switch">
+                <legend class="sr-only">走势区间，按观测日</legend>
+                <label><input type="radio" name="spot-range" value="30" checked><span>30 日</span></label>
+                <label><input type="radio" name="spot-range" value="90"><span>90 日</span></label>
+                <label><input type="radio" name="spot-range" value="252"><span>252 日</span></label>
+              </fieldset>
+            </div>
+            <p class="empty-panel" id="spot-unit-empty" hidden></p>
+            <div id="spot-series">
+              <div class="plot spot-plot">
+                <canvas id="spot-chart" aria-hidden="true"></canvas>
+                <output class="chart-tooltip" hidden></output>
+              </div>
+              <p class="source-line" id="spot-series-note"></p>
+              <details class="chart-data">
+                <summary>查看走势图数据</summary>
+                <div class="table-scroll" id="spot-data" tabindex="0" role="region" aria-label="日度参考价数据"></div>
+              </details>
+            </div>
+          </figure>
+          <p class="empty-panel" id="quote-chart-empty">正在读取近期走势。</p>
+          <p class="field-hint" role="status" id="data-freshness"></p>
+          <p class="field-hint" role="status" id="refresh-status"></p>
+        </article>
+
+        <article class="card signal-card">
+          <div class="signal-heading"><h2>近期市场表现</h2><span class="signal-status" id="trend-label">等待数据</span></div>
+          <div class="signal-score numeric"><strong id="trend-return">—</strong></div>
+          <p class="signal-subtitle">过去 22 个观测日美元涨跌幅</p>
+          <dl class="signal-meta">
+            <div><dt>5 观测日涨跌</dt><dd id="trend-week">—</dd></div>
+            <div><dt>近 22 日年化波动</dt><dd id="trend-volatility">—</dd></div>
+          </dl>
+          <p class="source-line" id="trend-source">基于波兰央行日度参考序列。</p>
+          <div class="signal-actions"><a href="#/analysis">查看历史情景</a></div>
+        </article>
+
+        <article class="card domestic-card">
+          <h2>国内报价参考</h2>
+          <p>上海金基准价按人民币每克公布。金条、金饰及银行积存金的买入与回购，以渠道当时报价和费用为准。</p>
+          <div class="domestic-actions">
+            <a class="outline-button" href="https://www.sge.com.cn/sjzx/jzj">查看上海金基准价</a>
+            <a class="outline-button" href="#/plan/compare">比较渠道成本</a>
+          </div>
+        </article>
+      </div>
+
+    </section>
+
+    <section class="view" data-page="analysis" aria-labelledby="page-title" hidden>
+      <div class="analysis-grid">
+        <article class="card outlook-card">
+          <div class="outlook-heading">
+            <h2>历史分位情景</h2>
+            <fieldset class="period-switch" id="period-switch">
+              <legend class="sr-only">情景期限，按观测日</legend>
+              <label><input type="radio" name="period" value="5"><span>5 日</span></label>
+              <label><input type="radio" name="period" value="10"><span>10 日</span></label>
+              <label><input type="radio" name="period" value="22" checked><span>22 日</span></label>
+            </fieldset>
+          </div>
+          <div class="analysis-unit-row">
+            <p class="source-line" id="analysis-source">基于波兰央行日度参考价，按观测日计算。</p>
+            <fieldset class="range-switch" id="analysis-currency-switch">
+              <legend class="sr-only">历史情景计价单位</legend>
+              <label><input type="radio" name="analysis-currency" value="usd" checked><span>美元 / 盎司</span></label>
+              <label><input type="radio" name="analysis-currency" value="cny"><span>人民币 / 克</span></label>
+            </fieldset>
+          </div>
+          <p class="empty-panel" id="analysis-empty">正在读取历史数据。</p>
+          <div id="analysis-result" hidden>
+            <div class="outlook-summary" role="status">
+              <div><div class="outlook-price numeric" id="forecast-value">—</div><span class="unit" id="scenario-unit">历史中位情景 · 美元 / 盎司</span></div>
+              <div class="outlook-range">
+                <span>10–90 分位区间</span>
+                <strong id="forecast-range">—</strong>
+                <span id="forecast-change">—</span>
+              </div>
+            </div>
+            <figure class="chart-figure">
+              <figcaption class="sr-only">历史日度参考价与情景区间</figcaption>
+              <div class="plot forecast-plot">
+                <canvas id="forecast-chart" aria-hidden="true"></canvas>
+                <output class="chart-tooltip" hidden></output>
+              </div>
+              <ul class="chart-legend" aria-label="图例">
+                <li><i class="legend-line" aria-hidden="true"></i>日度参考价</li>
+                <li><i class="legend-projection" aria-hidden="true"></i>中位情景</li>
+                <li><i class="legend-band" aria-hidden="true"></i>历史分位区间</li>
+              </ul>
+              <details class="chart-data">
+                <summary>查看情景图表数据</summary>
+                <div class="table-scroll" id="forecast-data" tabindex="0" role="region" aria-label="历史价格与情景数据"></div>
+              </details>
+            </figure>
+          </div>
+        </article>
+
+        <article class="card breakdown-card">
+          <h2>样本外检验</h2>
+          <p class="source-line" id="validation-period">按所选观测日数滚动检验。</p>
+          <p class="empty-panel" id="validation-empty">历史数据就绪后显示结果。</p>
+          <dl class="validation-metrics" id="validation-metrics" hidden>
+            <div><dt>区间实现覆盖率</dt><dd id="validation-coverage">—</dd></div>
+            <div><dt>中位情景平均绝对百分比误差</dt><dd id="validation-mape">—</dd></div>
+            <div><dt>持平基准平均绝对百分比误差</dt><dd id="validation-baseline">—</dd></div>
+            <div><dt>非重叠检验样本</dt><dd id="validation-count">—</dd></div>
+          </dl>
+          <p class="analysis-reading" id="validation-reading" hidden></p>
+          <details class="method-note">
+            <summary>查看计算方法</summary>
+            <p>取最近 252 个同期限历史收益，计算第 10、50、90 分位，并应用于所选币种的最新日度参考价。人民币序列使用金价与汇率同日可配对的观测日。检验在每个历史起点使用该日及更早的数据，以起点价格持平作为基准。</p>
+          </details>
+        </article>
+      </div>
+
+      <section class="factor-section" aria-labelledby="factor-title">
+        <h2 id="factor-title">美元走势指标</h2>
+        <div class="factor-grid">
+          <article class="card factor-card"><h3>短期涨跌</h3><div class="factor-value"><strong id="factor-week" class="numeric">—</strong></div><p>最近 5 个观测日的累计变化。</p></article>
+          <article class="card factor-card"><h3>阶段涨跌</h3><div class="factor-value"><strong id="factor-month" class="numeric">—</strong></div><p>最近 22 个观测日的累计变化。</p></article>
+          <article class="card factor-card"><h3>相对 60 日均线</h3><div class="factor-value"><strong id="factor-average" class="numeric">—</strong></div><p id="factor-average-note">最新参考价相对于 60 日均价的偏离。</p></article>
+          <article class="card factor-card"><h3>年化波动</h3><div class="factor-value"><strong id="factor-volatility" class="numeric">—</strong></div><p>近 22 个日收益估算，按每年 252 观测日折算。</p></article>
         </div>
-        <div class="plan-result" id="plan-result"><div class="result-intro"><span class="rec-icon">✦</span><div><b>建议分三批配置</b><p>根据当前“谨慎积累”信号，保留部分现金应对回调。</p></div></div><div class="steps"><div><span>第一批 · 现在</span><b id="step-one">¥30,000</b><small>30%</small></div><div><span>第二批 · 回调 3–5%</span><b id="step-two">¥35,000</b><small>35%</small></div><div><span>第三批 · 趋势确认</span><b id="step-three">¥35,000</b><small>35%</small></div></div></div>
       </section>
-      <aside class="validation-note"><h2>计划边界</h2><p>这里只分配你输入的预算，不代表适合你的投资比例。未计入渠道价差与手续费，也不会下单。计划保存在当前浏览器，不会上传。</p></aside></section><footer class="footer"><span>© 2026 Aurelia Intelligence</span><span>演示数据 · 非投资建议 · 未连接交易账户</span></footer>
-    </main>
-  </div>
-  <script src="app.js?v=views-2"></script>
+      <aside class="notice">历史区间描述所选期限的终点。覆盖率来自历史检验，实际价格可能超出区间。</aside>
+    </section>
+
+    <section class="view" data-page="plan" aria-labelledby="page-title" hidden>
+      <div class="plan-grid">
+        <form class="card plan-form" id="plan-form" novalidate>
+          <div class="title-row result-heading"><h2>计划设置</h2><button class="outline-button" id="new-plan" type="button">新建计划</button></div>
+          <div class="form-fields">
+            <label class="form-field" for="plan-name"><span>计划名称</span><input id="plan-name" name="name" maxlength="60" required></label>
+            <label class="form-field" for="plan-start"><span>起始日期</span><input id="plan-start" name="start" type="date" min="1900-01-01" max="9998-12-31" required></label>
+          </div>
+          <div class="budget-field">
+            <label for="budget">计划预算</label>
+            <div class="budget-presets" role="group" aria-label="预算快捷金额">
+              <button type="button" class="preset-button" data-budget="10000">¥1 万</button>
+              <button type="button" class="preset-button" data-budget="50000">¥5 万</button>
+              <button type="button" class="preset-button" data-budget="100000">¥10 万</button>
+            </div>
+            <div class="budget-input">
+              <span aria-hidden="true">¥</span>
+              <input id="budget" name="budget" type="text" inputmode="numeric" value="100,000" required autocomplete="off" aria-describedby="budget-hint plan-error">
+              <span aria-hidden="true">CNY</span>
+            </div>
+            <p class="field-hint" id="budget-hint">最低 ¥1,000，按整元拆分且三批合计等于预算。</p>
+          </div>
+          <fieldset class="plan-field">
+            <legend>持有周期</legend>
+            <div class="choices" id="horizon-choices"></div>
+          </fieldset>
+          <fieldset class="plan-field">
+            <legend>分批比例</legend>
+            <div class="choices" id="risk-choices"></div>
+          </fieldset>
+          <fieldset class="plan-field estimate-fields">
+            <legend>金重与费用估算 <small>选填</small></legend>
+            <div class="form-fields">
+              <label class="form-field" for="plan-price"><span>拟购单价（¥/克）</span><input id="plan-price" name="price" inputmode="decimal" placeholder="输入报价"></label>
+              <label class="form-field" for="plan-fee"><span>额外费率（%）</span><input id="plan-fee" name="fee" inputmode="decimal" placeholder="0"></label>
+            </div>
+            <button class="text-button" id="use-reference" type="button" disabled>填入市场参考价</button>
+          </fieldset>
+          <p class="field-error" id="plan-error" role="alert" hidden></p>
+          <div class="plan-actions">
+            <button type="submit" class="primary-button">保存计划</button>
+            <button type="button" class="secondary-button" id="download-plan">导出 CSV</button>
+            <button type="button" class="secondary-button" id="download-calendar">导出日历</button>
+          </div>
+          <p class="save-status" id="save-status" role="status"></p>
+        </form>
+
+        <article class="card plan-result" id="plan-result" aria-labelledby="result-title">
+          <div class="title-row result-heading"><h2 id="result-title" tabindex="-1">分批方案</h2><span class="subtle-tag" id="plan-profile">—</span></div>
+          <div class="result-total"><span>总预算</span><strong class="numeric" id="plan-total">—</strong></div>
+          <div class="allocation-bar" id="allocation-bar" aria-hidden="true"></div>
+          <p class="result-description" id="plan-description">—</p>
+          <dl class="estimate-summary" id="estimate-summary" hidden>
+            <div><dt>预估总克数</dt><dd id="plan-grams">—</dd></div>
+            <div><dt>预估费用</dt><dd id="plan-fees">—</dd></div>
+          </dl>
+          <ol class="plan-stages" id="plan-stages"></ol>
+        </article>
+      </div>
+
+      <section class="card library-card" aria-labelledby="library-title">
+        <div class="title-row result-heading library-heading">
+          <h2 id="library-title">已保存的计划</h2>
+          <div class="library-actions">
+            <button class="outline-button" id="backup-plans" type="button">下载备份</button>
+            <button class="outline-button" id="import-plans" type="button">导入备份</button>
+            <input id="plan-import-file" type="file" accept=".json,application/json" hidden>
+          </div>
+        </div>
+        <p class="source-line">计划保存在当前浏览器。备份可用于迁移或恢复，导入时会自动合并重复方案。</p>
+        <p class="field-hint" id="library-status" role="status"></p>
+        <p class="empty-panel" id="library-empty">已保存的方案会出现在这里。</p>
+        <ul id="saved-plans" class="saved-plans"></ul>
+      </section>
+      <section class="card comparison-card" id="quote-compare" aria-labelledby="compare-title">
+        <header class="comparison-header">
+          <div><h2 id="compare-title" tabindex="-1">渠道报价比较</h2><p>按同等纯度、同一克重比较。报价已含的工费或手续费无需重复填入。</p></div>
+          <label class="form-field" for="compare-grams"><span>比较克重（克）</span><input id="compare-grams" name="grams" inputmode="decimal" value="10" form="comparison-form"></label>
+        </header>
+        <form id="comparison-form" novalidate></form>
+        <p class="comparison-summary" id="comparison-summary" role="status"></p>
+      </section>
+      <aside class="notice">分批方案的费率按黄金净价计算，费用计入预算。导出的日历可导入系统日历，后两批日期用于复盘。</aside>
+    </section>
+
+    <footer class="footer">
+      <span class="footer-brand">Aurelia</span>
+      <div class="source-links">
+        <a href="https://gold-api.com/docs">现货 · Gold API</a>
+        <a href="https://nbp.pl/en/statistic-and-financial-reporting/rates/">日度参考 · NBP</a>
+        <a href="https://frankfurter.dev/">汇率与历史接口 · Frankfurter</a>
+      </div>
+    </footer>
+  </main>
 </body>
 </html>

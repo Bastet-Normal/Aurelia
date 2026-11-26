@@ -23,12 +23,22 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Check application
+        run: |
+          for script in market.js model.js plans.js planner.js app.js sw.js; do
+            node --check "$script"
+          done
+          node --test
+      - name: Prepare static site
+        run: |
+          mkdir _site
+          cp index.html manifest.webmanifest styles.css market.js model.js plans.js planner.js app.js sw.js favicon.png icon-192.png icon-512.png _site/
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: _site
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
